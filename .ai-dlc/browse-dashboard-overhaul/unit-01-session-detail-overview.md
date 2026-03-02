@@ -1,5 +1,5 @@
 ---
-status: pending
+status: completed
 depends_on: []
 branch: ai-dlc/browse-dashboard-overhaul/01-session-detail-overview
 discipline: frontend
@@ -133,3 +133,4 @@ This unit does NOT:
 - The `DashboardPage` and `RepoDetailPage` have similar card patterns — use them as visual reference
 - Follow the atomic design hierarchy: atoms for primitives, molecules for stat items, organisms for section cards
 - Ensure all text content is wrapped in `<Text>` components (react-native-web requirement)
+
