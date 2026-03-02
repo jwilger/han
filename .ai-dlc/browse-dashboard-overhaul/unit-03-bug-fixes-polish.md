@@ -1,5 +1,5 @@
 ---
-status: in_progress
+status: completed
 depends_on: []
 branch: ai-dlc/browse-dashboard-overhaul/03-bug-fixes-polish
 discipline: frontend
