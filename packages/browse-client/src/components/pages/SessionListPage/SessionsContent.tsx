@@ -403,7 +403,6 @@ export function SessionsContent({
 					const bDur = b.node.duration ?? 0;
 					return bDur - aDur;
 				}
-				case "updatedAt":
 				default: {
 					const aTime = a.node.updatedAt || a.node.startedAt || "";
 					const bTime = b.node.updatedAt || b.node.startedAt || "";
