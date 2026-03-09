@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - use native HTTP transport for Jira/Atlassian MCP server ([1f3950b9](../../commit/1f3950b9))
 
+### Changed
+
+- remove duplicate mcpServers from plugin.json files ([d1e3cfa8](../../commit/d1e3cfa8))
+
+## [1.3.0] - 2026-03-09
+
+### Fixed
+
+- use native HTTP transport for Jira/Atlassian MCP server ([1f3950b9](../../commit/1f3950b9))
+
 ## [1.3.0] - 2026-01-30
 
 ## [1.3.0] - 2026-01-24
