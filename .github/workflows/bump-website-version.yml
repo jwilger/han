@@ -128,11 +128,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Pull latest changes before staging (autostash preserves local changes)
-          git stash
-          git pull --rebase origin main
-          git stash pop
-
+          # Commit locally first, then rebase on remote
           git add website/package.json website/CHANGELOG.md
           git commit -m "chore(website): bump version to ${{ steps.bump-version.outputs.new_version }} [skip ci]"
+          git pull --rebase origin main
           git push origin main
