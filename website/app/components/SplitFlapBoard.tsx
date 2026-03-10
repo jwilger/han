@@ -86,7 +86,8 @@ export default function SplitFlapBoard() {
 
 					return (
 						<span
-							key={`${i}-${char}`}
+							// biome-ignore lint/suspicious/noArrayIndexKey: fixed character positions in display board
+							key={`pos-${char}-${i}`}
 							className="flip-char"
 							data-char={displayChar}
 							aria-hidden="true"

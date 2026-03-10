@@ -632,9 +632,9 @@ export default async function PluginPage({
 																	Capabilities:
 																</h4>
 																<div className="space-y-3">
-																	{server.capabilities.map((cap, idx) => (
+																	{server.capabilities.map((cap) => (
 																		<div
-																			key={`${cap.category}-${idx}`}
+																			key={cap.category}
 																			className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
 																		>
 																			<div className="flex items-center gap-2 mb-2">
@@ -964,9 +964,9 @@ export default async function PluginPage({
 													</div>
 												</div>
 												<div className="space-y-3 mb-4">
-													{hookSection.commands.map((entry, idx) => (
+													{hookSection.commands.map((entry) => (
 														<HookCommandWithDetails
-															key={`${entry.command}-${idx}`}
+															key={entry.command ?? entry.prompt}
 															command={entry.command}
 															prompt={entry.prompt}
 															timeout={entry.timeout}

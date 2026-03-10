@@ -99,12 +99,8 @@ function TreeItem({ node, depth }: TreeItemProps) {
 			{/* Children */}
 			{isFolder && isOpen && node.children && (
 				<div>
-					{node.children.map((child, index) => (
-						<TreeItem
-							key={`${child.name}-${index}`}
-							node={child}
-							depth={depth + 1}
-						/>
+					{node.children.map((child) => (
+						<TreeItem key={child.name} node={child} depth={depth + 1} />
 					))}
 				</div>
 			)}
@@ -125,8 +121,8 @@ export function FileTree({ data, title = "File Structure" }: FileTreeProps) {
 
 			{/* Tree content */}
 			<div className="p-3 font-mono text-sm overflow-x-auto">
-				{data.map((node, index) => (
-					<TreeItem key={`${node.name}-${index}`} node={node} depth={0} />
+				{data.map((node) => (
+					<TreeItem key={node.name} node={node} depth={0} />
 				))}
 			</div>
 		</div>

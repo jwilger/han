@@ -102,10 +102,10 @@ export default function SearchBar({
 		const parts = text.split(new RegExp(`(${query})`, "gi"));
 		return (
 			<>
-				{parts.map((part, idx) =>
+				{parts.map((part) =>
 					part.toLowerCase() === query.toLowerCase() ? (
 						<mark
-							key={`match-${text.slice(0, 20)}-${idx}-${Math.random()}`}
+							key={`match-${text.slice(0, 20)}-${part}`}
 							className="bg-yellow-200 dark:bg-yellow-800"
 						>
 							{part}
