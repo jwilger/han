@@ -45,6 +45,7 @@ import {
 } from "./index.tsx";
 import { LineChangesChart } from "./LineChangesChart.tsx";
 import { ModelUsageChart } from "./ModelUsageChart.tsx";
+import { PerformanceTrendChart } from "./PerformanceTrendChart.tsx";
 import { SessionEffectivenessCard } from "./SessionEffectivenessCard.tsx";
 import { SubagentUsageChart } from "./SubagentUsageChart.tsx";
 import { TimeOfDayChart } from "./TimeOfDayChart.tsx";
@@ -289,6 +290,14 @@ export function DashboardContent({
 			failCount: h?.failCount ?? 0,
 			passRate: h?.passRate ?? 1,
 			avgDurationMs: h?.avgDurationMs ?? 0,
+		})),
+		performanceTrend: (rawAnalytics?.performanceTrend ?? []).map((p) => ({
+			weekStart: p?.weekStart ?? "",
+			weekLabel: p?.weekLabel ?? "",
+			sessionCount: p?.sessionCount ?? 0,
+			avgTurns: p?.avgTurns ?? 0,
+			avgCompactions: p?.avgCompactions ?? 0,
+			avgEffectiveness: p?.avgEffectiveness ?? 0,
 		})),
 		costAnalysis: {
 			estimatedCostUsd: rawAnalytics?.costAnalysis?.estimatedCostUsd ?? 0,
@@ -670,6 +679,26 @@ export function DashboardContent({
 				</Box>
 			</HStack>
 
+			{/* Performance Trend - full width */}
+			<SectionCard title="Session Performance Trend (30 days)">
+				{analyticsLoaded ? (
+					<PerformanceTrendChart
+						performanceTrend={analytics.performanceTrend}
+					/>
+				) : (
+					<Box
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							minHeight: "120px",
+						}}
+					>
+						<Text color="muted">Loading performance data...</Text>
+					</Box>
+				)}
+			</SectionCard>
+
 			{/* Session Effectiveness - full width */}
 			<SectionCard title="Session Effectiveness (30 days)">
 				{analyticsLoaded ? (
@@ -883,50 +912,53 @@ export function DashboardContent({
 			)}
 
 			{/* Project Plugins - only shown in single-project view when plugins exist */}
-			{isSingleProjectView && projectData?.plugins && projectData.plugins.length > 0 && (
-				<SectionCard title="Project Plugins">
-					<VStack gap="sm">
-						{projectData.plugins
-							.filter(
-								(plugin): plugin is typeof plugin & { id: string } =>
-									!!plugin?.id,
-							)
-							.map((plugin) => (
-								<PluginItem
-									key={plugin.id}
-									plugin={{
-										id: plugin.id,
-										name: plugin.name ?? "Unknown",
-										marketplace: plugin.marketplace ?? "",
-										scope:
-											(plugin.scope as Plugin["scope"]) ?? "USER",
-										enabled: plugin.enabled ?? false,
-										category: plugin.category ?? "Unknown",
-									}}
-								/>
-							))}
-					</VStack>
-				</SectionCard>
-			)}
+			{isSingleProjectView &&
+				projectData?.plugins &&
+				projectData.plugins.length > 0 && (
+					<SectionCard title="Project Plugins">
+						<VStack gap="sm">
+							{projectData.plugins
+								.filter(
+									(plugin): plugin is typeof plugin & { id: string } =>
+										!!plugin?.id,
+								)
+								.map((plugin) => (
+									<PluginItem
+										key={plugin.id}
+										plugin={{
+											id: plugin.id,
+											name: plugin.name ?? "Unknown",
+											marketplace: plugin.marketplace ?? "",
+											scope: (plugin.scope as Plugin["scope"]) ?? "USER",
+											enabled: plugin.enabled ?? false,
+											category: plugin.category ?? "Unknown",
+										}}
+									/>
+								))}
+						</VStack>
+					</SectionCard>
+				)}
 
 			{/* Worktrees - only shown in single-project view when worktrees exist */}
-			{isSingleProjectView && projectData?.worktrees && projectData.worktrees.length > 0 && (
-				<SectionCard title="Worktrees">
-					<VStack gap="sm">
-						{projectData.worktrees.map((wt) => (
-							<WorktreeItem
-								key={wt.path}
-								worktree={{
-									name: wt.name ?? "Unknown",
-									path: wt.path ?? "",
-									sessionCount: wt.sessionCount ?? 0,
-								}}
-								projectId={projectData.projectId ?? projectId ?? ""}
-							/>
-						))}
-					</VStack>
-				</SectionCard>
-			)}
+			{isSingleProjectView &&
+				projectData?.worktrees &&
+				projectData.worktrees.length > 0 && (
+					<SectionCard title="Worktrees">
+						<VStack gap="sm">
+							{projectData.worktrees.map((wt) => (
+								<WorktreeItem
+									key={wt.path}
+									worktree={{
+										name: wt.name ?? "Unknown",
+										path: wt.path ?? "",
+										sessionCount: wt.sessionCount ?? 0,
+									}}
+									projectId={projectData.projectId ?? projectId ?? ""}
+								/>
+							))}
+						</VStack>
+					</SectionCard>
+				)}
 		</VStack>
 	);
 }

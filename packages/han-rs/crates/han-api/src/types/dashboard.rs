@@ -112,6 +112,24 @@ pub struct DashboardAnalytics {
     pub hook_health: Option<Vec<HookHealthStats>>,
     pub subagent_usage: Option<Vec<SubagentUsageStats>>,
     pub tool_usage: Option<Vec<ToolUsageStats>>,
+    pub performance_trend: Option<Vec<SessionPerformancePoint>>,
+}
+
+/// Weekly session performance data point for trend visualization.
+#[derive(Debug, Clone, SimpleObject)]
+pub struct SessionPerformancePoint {
+    /// Monday of the week (YYYY-MM-DD).
+    pub week_start: Option<String>,
+    /// Human-readable week label (e.g., "Jan 27 - Feb 2").
+    pub week_label: Option<String>,
+    /// Number of sessions this week.
+    pub session_count: Option<i32>,
+    /// Average user turns per session this week.
+    pub avg_turns: Option<f64>,
+    /// Average compactions per session this week.
+    pub avg_compactions: Option<f64>,
+    /// Average effectiveness score (0-100) this week.
+    pub avg_effectiveness: Option<f64>,
 }
 
 /// Composite effectiveness score for a session.
@@ -288,12 +306,27 @@ struct ModelPricing {
 /// Get pricing for a model ID. Falls back to Sonnet pricing for unknown models.
 fn pricing_for_model(model_id: &str) -> ModelPricing {
     if model_id.contains("opus") {
-        ModelPricing { input: 15.0, output: 75.0, cache_read: 1.50, cache_creation: 18.75 }
+        ModelPricing {
+            input: 15.0,
+            output: 75.0,
+            cache_read: 1.50,
+            cache_creation: 18.75,
+        }
     } else if model_id.contains("haiku") {
-        ModelPricing { input: 0.80, output: 4.0, cache_read: 0.08, cache_creation: 1.0 }
+        ModelPricing {
+            input: 0.80,
+            output: 4.0,
+            cache_read: 0.08,
+            cache_creation: 1.0,
+        }
     } else {
         // Sonnet or unknown
-        ModelPricing { input: 3.0, output: 15.0, cache_read: 0.30, cache_creation: 3.75 }
+        ModelPricing {
+            input: 3.0,
+            output: 15.0,
+            cache_read: 0.30,
+            cache_creation: 3.75,
+        }
     }
 }
 
@@ -368,11 +401,15 @@ impl Default for ActivityData {
     fn default() -> Self {
         Self {
             daily_activity: Some(vec![]),
-            hourly_activity: Some((0..24).map(|h| HourlyActivity {
-                hour: Some(h),
-                session_count: Some(0),
-                message_count: Some(0),
-            }).collect()),
+            hourly_activity: Some(
+                (0..24)
+                    .map(|h| HourlyActivity {
+                        hour: Some(h),
+                        session_count: Some(0),
+                        message_count: Some(0),
+                    })
+                    .collect(),
+            ),
             token_usage: None,
             daily_model_tokens: Some(vec![]),
             model_usage: Some(vec![]),
@@ -395,6 +432,7 @@ impl Default for DashboardAnalytics {
             hook_health: Some(vec![]),
             subagent_usage: Some(vec![]),
             tool_usage: Some(vec![]),
+            performance_trend: Some(vec![]),
         }
     }
 }

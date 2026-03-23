@@ -221,7 +221,7 @@ type CompactionStats {
 """
 Config directory data.
 """
-type ConfigDir {
+type ConfigDir implements Node {
 	path: String!
 	name: String
 	isDefault: Boolean!
@@ -368,6 +368,7 @@ type DashboardAnalytics {
 	hookHealth: [HookHealthStats!]
 	subagentUsage: [SubagentUsageStats!]
 	toolUsage: [ToolUsageStats!]
+	performanceTrend: [SessionPerformancePoint!]
 }
 
 type ExposedToolCallMessage implements Message {
@@ -586,7 +587,7 @@ type HookDatetimeMessage implements Message {
 """
 Hook execution data.
 """
-type HookExecution {
+type HookExecution implements Node {
 	orchestrationId: String
 	sessionId: String
 	taskId: String
@@ -1338,7 +1339,7 @@ type MutationRoot {
 	unregisterConfigDir(path: String!): Boolean!
 }
 
-type NativeTask {
+type NativeTask implements Node {
 	id: ID!
 	subject: String!
 	description: String
@@ -1639,7 +1640,7 @@ type Query {
 	"""
 	node(id: ID!): Node
 	"""
-	Fetch a single message by ID (browse-client compat).
+	Fetch a single message by its UUID.
 	"""
 	message(id: String!): Message
 	"""
@@ -2107,41 +2108,17 @@ type SessionFilesChangedPayload {
 }
 
 """
-Session filter with GreenFairy-style operators and association filtering.
-
-Supports filtering by direct column fields (id, projectId, status, slug, etc.)
-and through associations (project → repo chain).
-
-Example: `{ project: { repoId: { _eq: "some-repo-id" } } }`
+Auto-generated filter input type.
 """
 input SessionFilter {
-	"""
-	Filter by session ID.
-	"""
 	id: StringFilter
-	"""
-	Filter by project ID.
-	"""
 	projectId: StringFilter
-	"""
-	Filter by session status.
-	"""
 	status: StringFilter
-	"""
-	Filter by session slug.
-	"""
 	slug: StringFilter
-	"""
-	Filter by PR number.
-	"""
 	prNumber: IntFilter
-	"""
-	Filter by team name.
-	"""
 	teamName: StringFilter
 	"""
-	Association filter: filter sessions by their project's fields.
-	Supports nested filtering through project → repo.
+	Association filter (auto-generated).
 	"""
 	project: ProjectFilter
 	"""
@@ -2181,7 +2158,7 @@ type SessionMessageAddedPayload {
 }
 
 """
-Session ordering.
+Auto-generated ordering input type.
 """
 input SessionOrderBy {
 	id: OrderDirection
@@ -2190,6 +2167,36 @@ input SessionOrderBy {
 	slug: OrderDirection
 	prNumber: OrderDirection
 	teamName: OrderDirection
+}
+
+"""
+Weekly session performance data point for trend visualization.
+"""
+type SessionPerformancePoint {
+	"""
+	Monday of the week (YYYY-MM-DD).
+	"""
+	weekStart: String
+	"""
+	Human-readable week label (e.g., "Jan 27 - Feb 2").
+	"""
+	weekLabel: String
+	"""
+	Number of sessions this week.
+	"""
+	sessionCount: Int
+	"""
+	Average user turns per session this week.
+	"""
+	avgTurns: Float
+	"""
+	Average compactions per session this week.
+	"""
+	avgCompactions: Float
+	"""
+	Average effectiveness score (0-100) this week.
+	"""
+	avgEffectiveness: Float
 }
 
 """
@@ -2756,6 +2763,7 @@ type ToolUseBlock implements ContentBlock {
 	agentTaskId: String
 	"""
 	Tool result resolved inline via DataLoader.
+	Looks up pre-indexed data from `tool_call_results` table — simple PK lookup.
 	"""
 	result: ToolResultBlock
 	"""

@@ -78,6 +78,14 @@ export const DashboardAnalyticsFragment = graphql`
         passRate
         avgDurationMs
       }
+      performanceTrend {
+        weekStart
+        weekLabel
+        sessionCount
+        avgTurns
+        avgCompactions
+        avgEffectiveness
+      }
       costAnalysis {
         estimatedCostUsd
         isEstimated
@@ -337,7 +345,10 @@ export interface DashboardPageProps {
 function buildSessionFilter(
 	projectId?: string,
 	repoId?: string,
-): { projectId: { _eq: string } } | { project: { repoId: { _eq: string } } } | null {
+):
+	| { projectId: { _eq: string } }
+	| { project: { repoId: { _eq: string } } }
+	| null {
 	if (projectId) {
 		return { projectId: { _eq: projectId } };
 	}
