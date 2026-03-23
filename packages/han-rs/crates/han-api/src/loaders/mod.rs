@@ -25,10 +25,7 @@ impl Loader<String> for SessionMessagesLoader {
     type Value = Vec<messages::Model>;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let all_messages = messages::Entity::find()
             .filter(messages::Column::SessionId.is_in(keys.to_vec()))
             .order_by_desc(messages::Column::Timestamp)
@@ -38,9 +35,7 @@ impl Loader<String> for SessionMessagesLoader {
 
         let mut map: HashMap<String, Vec<messages::Model>> = HashMap::new();
         for msg in all_messages {
-            map.entry(msg.session_id.clone())
-                .or_default()
-                .push(msg);
+            map.entry(msg.session_id.clone()).or_default().push(msg);
         }
 
         // Ensure all requested keys have entries
@@ -65,12 +60,12 @@ impl Loader<String> for SessionHookExecutionsLoader {
     type Value = Vec<hook_executions::Model>;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let all_executions = hook_executions::Entity::find()
-            .filter(hook_executions::Column::SessionId.is_in(keys.iter().map(|k| Some(k.clone())).collect::<Vec<_>>()))
+            .filter(
+                hook_executions::Column::SessionId
+                    .is_in(keys.iter().map(|k| Some(k.clone())).collect::<Vec<_>>()),
+            )
             .order_by_desc(hook_executions::Column::ExecutedAt)
             .all(&self.db)
             .await
@@ -79,9 +74,7 @@ impl Loader<String> for SessionHookExecutionsLoader {
         let mut map: HashMap<String, Vec<hook_executions::Model>> = HashMap::new();
         for exec in all_executions {
             if let Some(ref session_id) = exec.session_id {
-                map.entry(session_id.clone())
-                    .or_default()
-                    .push(exec);
+                map.entry(session_id.clone()).or_default().push(exec);
             }
         }
 
@@ -106,10 +99,7 @@ impl Loader<String> for SessionNativeTasksLoader {
     type Value = Vec<native_tasks::Model>;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let all_tasks = native_tasks::Entity::find()
             .filter(native_tasks::Column::SessionId.is_in(keys.to_vec()))
             .order_by_asc(native_tasks::Column::CreatedAt)
@@ -119,9 +109,7 @@ impl Loader<String> for SessionNativeTasksLoader {
 
         let mut map: HashMap<String, Vec<native_tasks::Model>> = HashMap::new();
         for task in all_tasks {
-            map.entry(task.session_id.clone())
-                .or_default()
-                .push(task);
+            map.entry(task.session_id.clone()).or_default().push(task);
         }
 
         for key in keys {
@@ -145,12 +133,12 @@ impl Loader<String> for SessionTasksLoader {
     type Value = Vec<tasks::Model>;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let all_tasks = tasks::Entity::find()
-            .filter(tasks::Column::SessionId.is_in(keys.iter().map(|k| Some(k.clone())).collect::<Vec<_>>()))
+            .filter(
+                tasks::Column::SessionId
+                    .is_in(keys.iter().map(|k| Some(k.clone())).collect::<Vec<_>>()),
+            )
             .order_by_desc(tasks::Column::StartedAt)
             .all(&self.db)
             .await
@@ -159,9 +147,7 @@ impl Loader<String> for SessionTasksLoader {
         let mut map: HashMap<String, Vec<tasks::Model>> = HashMap::new();
         for task in all_tasks {
             if let Some(ref session_id) = task.session_id {
-                map.entry(session_id.clone())
-                    .or_default()
-                    .push(task);
+                map.entry(session_id.clone()).or_default().push(task);
             }
         }
 
@@ -186,10 +172,7 @@ impl Loader<String> for SessionFileChangesLoader {
     type Value = Vec<session_file_changes::Model>;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let all_changes = session_file_changes::Entity::find()
             .filter(session_file_changes::Column::SessionId.is_in(keys.to_vec()))
             .order_by_desc(session_file_changes::Column::RecordedAt)
@@ -225,10 +208,7 @@ impl Loader<String> for SessionTodosLoader {
     type Value = Vec<session_todos::Model>;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let all_todos = session_todos::Entity::find()
             .filter(session_todos::Column::SessionId.is_in(keys.to_vec()))
             .all(&self.db)
@@ -237,9 +217,7 @@ impl Loader<String> for SessionTodosLoader {
 
         let mut map: HashMap<String, Vec<session_todos::Model>> = HashMap::new();
         for todo in all_todos {
-            map.entry(todo.session_id.clone())
-                .or_default()
-                .push(todo);
+            map.entry(todo.session_id.clone()).or_default().push(todo);
         }
 
         for key in keys {
@@ -265,10 +243,7 @@ impl Loader<String> for ToolResultByParentIdLoader {
     type Value = han_db::entities::tool_call_results::Model;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let results = han_db::crud::tool_call_results::get_batch(&self.db, keys.to_vec())
             .await
             .map_err(|e| async_graphql::Error::new(e.to_string()))?;
@@ -295,10 +270,7 @@ impl Loader<String> for ToolResultByCallIdLoader {
     type Value = messages::Model;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         let results = han_db::crud::messages::find_results_by_call_ids(
             &self.db,
             keys.to_vec(),
@@ -334,10 +306,7 @@ impl Loader<String> for HookResultByRunIdLoader {
     type Value = messages::Model;
     type Error = async_graphql::Error;
 
-    async fn load(
-        &self,
-        keys: &[String],
-    ) -> Result<HashMap<String, Self::Value>, Self::Error> {
+    async fn load(&self, keys: &[String]) -> Result<HashMap<String, Self::Value>, Self::Error> {
         // Parse composite keys "session_id:hook_name:line_number"
         struct RunKey {
             session_id: String,
@@ -351,7 +320,9 @@ impl Loader<String> for HookResultByRunIdLoader {
             .filter_map(|k| {
                 // Format: "session_id:hook_name:line_number"
                 let parts: Vec<&str> = k.rsplitn(2, ':').collect();
-                if parts.len() != 2 { return None; }
+                if parts.len() != 2 {
+                    return None;
+                }
                 let line: i32 = parts[0].parse().ok()?;
                 let rest = parts[1];
                 let (sid, hook) = rest.rsplit_once(':')?;
@@ -373,17 +344,18 @@ impl Loader<String> for HookResultByRunIdLoader {
             .collect();
 
         // Fetch all hook_results for these sessions
-        let all_results = han_db::crud::messages::find_hook_results_for_sessions(
-            &self.db,
-            session_ids,
-        )
-        .await
-        .map_err(|e| async_graphql::Error::new(e.to_string()))?;
+        let all_results =
+            han_db::crud::messages::find_hook_results_for_sessions(&self.db, session_ids)
+                .await
+                .map_err(|e| async_graphql::Error::new(e.to_string()))?;
 
         // Group results by session_id for efficient matching
         let mut by_session: HashMap<String, Vec<&messages::Model>> = HashMap::new();
         for msg in &all_results {
-            by_session.entry(msg.session_id.clone()).or_default().push(msg);
+            by_session
+                .entry(msg.session_id.clone())
+                .or_default()
+                .push(msg);
         }
 
         // Match each hook_run to its closest hook_result
@@ -452,18 +424,12 @@ impl HanLoaders {
                 SessionNativeTasksLoader { db: db.clone() },
                 tokio::spawn,
             ),
-            session_tasks: DataLoader::new(
-                SessionTasksLoader { db: db.clone() },
-                tokio::spawn,
-            ),
+            session_tasks: DataLoader::new(SessionTasksLoader { db: db.clone() }, tokio::spawn),
             session_file_changes: DataLoader::new(
                 SessionFileChangesLoader { db: db.clone() },
                 tokio::spawn,
             ),
-            session_todos: DataLoader::new(
-                SessionTodosLoader { db: db.clone() },
-                tokio::spawn,
-            ),
+            session_todos: DataLoader::new(SessionTodosLoader { db: db.clone() }, tokio::spawn),
             tool_result_by_parent_id: DataLoader::new(
                 ToolResultByParentIdLoader { db: db.clone() },
                 tokio::spawn,
@@ -472,10 +438,7 @@ impl HanLoaders {
                 ToolResultByCallIdLoader { db: db.clone() },
                 tokio::spawn,
             ),
-            hook_result_by_run_id: DataLoader::new(
-                HookResultByRunIdLoader { db },
-                tokio::spawn,
-            ),
+            hook_result_by_run_id: DataLoader::new(HookResultByRunIdLoader { db }, tokio::spawn),
         }
     }
 }

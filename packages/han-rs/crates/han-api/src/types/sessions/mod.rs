@@ -8,16 +8,14 @@ use sea_orm::{
 };
 
 use crate::connection::PageInfo;
-use crate::node::{encode_global_id, encode_msg_cursor, decode_msg_cursor};
+use crate::node::{decode_msg_cursor, encode_global_id, encode_msg_cursor};
 use crate::types::content_blocks::ToolResultBlock;
 use crate::types::file_change::{FileChange, FileChangeConnection, FileChangeEdge};
 use crate::types::frustration::FrustrationSummary;
 use crate::types::hook_execution::{
     HookExecution, HookExecutionConnection, HookExecutionEdge, HookStats, HookTypeStat,
 };
-use crate::types::messages::{
-    MessageConnection, MessageData, MessageEdge, discriminate_message,
-};
+use crate::types::messages::{discriminate_message, MessageConnection, MessageData, MessageEdge};
 use crate::types::metrics::{Task, TaskConnection, TaskEdge};
 use crate::types::native_task::NativeTask;
 use crate::types::search_result::MessageSearchResult;
@@ -210,8 +208,7 @@ impl SessionData {
         let limit = first.or(last).unwrap_or(50) as usize;
 
         // Build query with combined filters
-        let mut query = messages::Entity::find()
-            .filter(base_condition);
+        let mut query = messages::Entity::find().filter(base_condition);
 
         // Apply cursor-based keyset filtering for `after` cursor.
         // Messages are ordered (timestamp DESC, id ASC), so "after" means
@@ -339,22 +336,34 @@ impl SessionData {
     // ========================================================================
 
     /// Organization ID (only populated in hosted team mode).
-    async fn org_id(&self) -> Option<&str> { None }
+    async fn org_id(&self) -> Option<&str> {
+        None
+    }
 
     /// Session owner (only populated in hosted team mode).
-    async fn owner(&self) -> Option<User> { None }
+    async fn owner(&self) -> Option<User> {
+        None
+    }
 
     /// The project this session belongs to.
-    async fn project(&self) -> Option<crate::types::project::Project> { None }
+    async fn project(&self) -> Option<crate::types::project::Project> {
+        None
+    }
 
     /// The currently in-progress todo, if any.
-    async fn current_todo(&self) -> Option<Todo> { None }
+    async fn current_todo(&self) -> Option<Todo> {
+        None
+    }
 
     /// The most recently started active task, if any.
-    async fn current_task(&self) -> Option<Task> { None }
+    async fn current_task(&self) -> Option<Task> {
+        None
+    }
 
     /// IDs of agent tasks spawned during this session.
-    async fn agent_task_ids(&self) -> Option<Vec<String>> { Some(vec![]) }
+    async fn agent_task_ids(&self) -> Option<Vec<String>> {
+        Some(vec![])
+    }
 
     /// All tasks tracked in this session via start_task MCP tool.
     async fn tasks(
@@ -691,7 +700,9 @@ impl SessionData {
     async fn turn_count(&self, ctx: &Context<'_>) -> Result<Option<i32>> {
         let db = ctx.data::<DatabaseConnection>()?;
         #[derive(Debug, FromQueryResult)]
-        struct CountRow { count: i64 }
+        struct CountRow {
+            count: i64,
+        }
         let row = CountRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
             "SELECT COUNT(*) as count FROM messages WHERE session_id = ? AND role = 'user'",
@@ -707,7 +718,9 @@ impl SessionData {
     async fn compaction_count(&self, ctx: &Context<'_>) -> Result<Option<i32>> {
         let db = ctx.data::<DatabaseConnection>()?;
         #[derive(Debug, FromQueryResult)]
-        struct CountRow { count: i64 }
+        struct CountRow {
+            count: i64,
+        }
         let row = CountRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
             "SELECT COUNT(*) as count FROM session_compacts WHERE session_id = ?",
@@ -723,7 +736,11 @@ impl SessionData {
     async fn estimated_cost_usd(&self, ctx: &Context<'_>) -> Result<Option<f64>> {
         let db = ctx.data::<DatabaseConnection>()?;
         #[derive(Debug, FromQueryResult)]
-        struct TokenRow { input_tokens: i64, output_tokens: i64, cache_read_tokens: i64 }
+        struct TokenRow {
+            input_tokens: i64,
+            output_tokens: i64,
+            cache_read_tokens: i64,
+        }
         let row = TokenRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
             "SELECT \
@@ -736,7 +753,13 @@ impl SessionData {
         .one(db)
         .await
         .map_err(|e| Error::new(e.to_string()))?;
-        Ok(row.map(|r| crate::types::dashboard::estimate_cost_usd(r.input_tokens, r.output_tokens, r.cache_read_tokens)))
+        Ok(row.map(|r| {
+            crate::types::dashboard::estimate_cost_usd(
+                r.input_tokens,
+                r.output_tokens,
+                r.cache_read_tokens,
+            )
+        }))
     }
 
     /// Session duration in seconds (first to last message).
@@ -744,12 +767,16 @@ impl SessionData {
         let start = self.started_at.as_ref()?;
         let end = self.updated_at.as_ref()?;
         let start_dt = chrono::DateTime::parse_from_rfc3339(start)
-            .or_else(|_| chrono::NaiveDateTime::parse_from_str(start, "%Y-%m-%dT%H:%M:%S%.f")
-                .map(|dt| dt.and_utc().fixed_offset()))
+            .or_else(|_| {
+                chrono::NaiveDateTime::parse_from_str(start, "%Y-%m-%dT%H:%M:%S%.f")
+                    .map(|dt| dt.and_utc().fixed_offset())
+            })
             .ok()?;
         let end_dt = chrono::DateTime::parse_from_rfc3339(end)
-            .or_else(|_| chrono::NaiveDateTime::parse_from_str(end, "%Y-%m-%dT%H:%M:%S%.f")
-                .map(|dt| dt.and_utc().fixed_offset()))
+            .or_else(|_| {
+                chrono::NaiveDateTime::parse_from_str(end, "%Y-%m-%dT%H:%M:%S%.f")
+                    .map(|dt| dt.and_utc().fixed_offset())
+            })
             .ok()?;
         Some(end_dt.signed_duration_since(start_dt).num_seconds() as i32)
     }
@@ -781,7 +808,7 @@ pub struct SessionConnection {
 #[derive(han_graphql_derive::EntityFilter)]
 #[entity_filter(
     entity = "han_db::entities::sessions::Entity",
-    columns = "han_db::entities::sessions::Column",
+    columns = "han_db::entities::sessions::Column"
 )]
 pub struct SessionFilterSource {
     pub id: String,
@@ -840,7 +867,9 @@ mod tests {
 
     #[test]
     fn test_build_session_connection_all() {
-        let sessions: Vec<_> = (0..5).map(|i| make_session(&format!("s{i}"), "2024-01-01")).collect();
+        let sessions: Vec<_> = (0..5)
+            .map(|i| make_session(&format!("s{i}"), "2024-01-01"))
+            .collect();
         let conn = build_session_connection(sessions, None, None, None, None);
         assert_eq!(conn.total_count, 5);
         assert_eq!(conn.edges.len(), 5);
@@ -850,7 +879,9 @@ mod tests {
 
     #[test]
     fn test_build_session_connection_first() {
-        let sessions: Vec<_> = (0..5).map(|i| make_session(&format!("s{i}"), "2024-01-01")).collect();
+        let sessions: Vec<_> = (0..5)
+            .map(|i| make_session(&format!("s{i}"), "2024-01-01"))
+            .collect();
         let conn = build_session_connection(sessions, Some(2), None, None, None);
         assert_eq!(conn.edges.len(), 2);
         assert_eq!(conn.total_count, 5);
@@ -860,7 +891,9 @@ mod tests {
 
     #[test]
     fn test_build_session_connection_last() {
-        let sessions: Vec<_> = (0..5).map(|i| make_session(&format!("s{i}"), "2024-01-01")).collect();
+        let sessions: Vec<_> = (0..5)
+            .map(|i| make_session(&format!("s{i}"), "2024-01-01"))
+            .collect();
         let conn = build_session_connection(sessions, None, None, Some(2), None);
         assert_eq!(conn.edges.len(), 2);
         assert_eq!(conn.total_count, 5);
@@ -870,7 +903,9 @@ mod tests {
 
     #[test]
     fn test_build_session_connection_cursors_set() {
-        let sessions: Vec<_> = (0..3).map(|i| make_session(&format!("s{i}"), "2024-01-01")).collect();
+        let sessions: Vec<_> = (0..3)
+            .map(|i| make_session(&format!("s{i}"), "2024-01-01"))
+            .collect();
         let conn = build_session_connection(sessions, None, None, None, None);
         assert!(conn.page_info.start_cursor.is_some());
         assert!(conn.page_info.end_cursor.is_some());
@@ -879,7 +914,9 @@ mod tests {
 
     #[test]
     fn test_build_session_connection_after_cursor() {
-        let sessions: Vec<_> = (0..5).map(|i| make_session(&format!("s{i}"), "2024-01-01")).collect();
+        let sessions: Vec<_> = (0..5)
+            .map(|i| make_session(&format!("s{i}"), "2024-01-01"))
+            .collect();
         // Get the cursor of the first edge
         let full = build_session_connection(sessions.clone(), None, None, None, None);
         let after = full.edges[1].cursor.clone();
@@ -974,13 +1011,20 @@ pub fn build_session_connection(
 
     // Apply pagination
     let start_idx = if let Some(ref after_cursor) = after {
-        all_edges.iter().position(|e| e.cursor == *after_cursor).map(|i| i + 1).unwrap_or(0)
+        all_edges
+            .iter()
+            .position(|e| e.cursor == *after_cursor)
+            .map(|i| i + 1)
+            .unwrap_or(0)
     } else {
         0
     };
 
     let end_idx = if let Some(ref before_cursor) = before {
-        all_edges.iter().position(|e| e.cursor == *before_cursor).unwrap_or(all_edges.len())
+        all_edges
+            .iter()
+            .position(|e| e.cursor == *before_cursor)
+            .unwrap_or(all_edges.len())
     } else {
         all_edges.len()
     };

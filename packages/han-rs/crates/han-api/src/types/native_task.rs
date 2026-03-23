@@ -1,7 +1,7 @@
 //! Native task (Claude Code TaskCreate/TaskUpdate) GraphQL type.
 
-use async_graphql::*;
 use crate::node::encode_global_id;
+use async_graphql::*;
 
 /// Native task data.
 #[derive(Debug, Clone)]
@@ -24,25 +24,51 @@ pub struct NativeTask {
 
 #[Object]
 impl NativeTask {
-    pub async fn id(&self) -> ID { encode_global_id("NativeTask", &self.raw_id) }
-    async fn subject(&self) -> &str { &self.subject }
-    async fn description(&self) -> Option<&str> { self.description.as_deref() }
-    async fn status(&self) -> &str { &self.status }
-    async fn active_form(&self) -> Option<&str> { self.active_form.as_deref() }
-    async fn owner(&self) -> Option<&str> { self.owner.as_deref() }
+    pub async fn id(&self) -> ID {
+        encode_global_id("NativeTask", &self.raw_id)
+    }
+    async fn subject(&self) -> &str {
+        &self.subject
+    }
+    async fn description(&self) -> Option<&str> {
+        self.description.as_deref()
+    }
+    async fn status(&self) -> &str {
+        &self.status
+    }
+    async fn active_form(&self) -> Option<&str> {
+        self.active_form.as_deref()
+    }
+    async fn owner(&self) -> Option<&str> {
+        self.owner.as_deref()
+    }
     async fn blocks(&self) -> Option<Vec<String>> {
-        self.blocks.as_ref().and_then(|b| serde_json::from_str(b).ok())
+        self.blocks
+            .as_ref()
+            .and_then(|b| serde_json::from_str(b).ok())
     }
     async fn blocked_by(&self) -> Option<Vec<String>> {
-        self.blocked_by.as_ref().and_then(|b| serde_json::from_str(b).ok())
+        self.blocked_by
+            .as_ref()
+            .and_then(|b| serde_json::from_str(b).ok())
     }
-    async fn created_at(&self) -> &str { &self.created_at }
-    async fn updated_at(&self) -> &str { &self.updated_at }
-    async fn completed_at(&self) -> Option<&str> { self.completed_at.as_deref() }
+    async fn created_at(&self) -> &str {
+        &self.created_at
+    }
+    async fn updated_at(&self) -> &str {
+        &self.updated_at
+    }
+    async fn completed_at(&self) -> Option<&str> {
+        self.completed_at.as_deref()
+    }
     /// Session ID this task belongs to.
-    async fn session_id(&self) -> &str { &self.session_id }
+    async fn session_id(&self) -> &str {
+        &self.session_id
+    }
     /// Message ID that created/updated this task.
-    async fn message_id(&self) -> &str { &self.message_id }
+    async fn message_id(&self) -> &str {
+        &self.message_id
+    }
 }
 
 impl From<han_db::entities::native_tasks::Model> for NativeTask {
@@ -72,7 +98,7 @@ impl From<han_db::entities::native_tasks::Model> for NativeTask {
 #[derive(han_graphql_derive::EntityFilter)]
 #[entity_filter(
     entity = "han_db::entities::native_tasks::Entity",
-    columns = "han_db::entities::native_tasks::Column",
+    columns = "han_db::entities::native_tasks::Column"
 )]
 struct NativeTaskFilterSource {
     id: String,

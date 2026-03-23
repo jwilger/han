@@ -7,7 +7,9 @@ use tokio::sync::broadcast;
 use async_graphql::dataloader::DataLoader;
 
 use crate::context::DbChangeEvent;
-use crate::loaders::{HookResultByRunIdLoader, ToolResultByCallIdLoader, ToolResultByParentIdLoader};
+use crate::loaders::{
+    HookResultByRunIdLoader, ToolResultByCallIdLoader, ToolResultByParentIdLoader,
+};
 use crate::mutation::MutationRoot;
 use crate::query::QueryRoot;
 use crate::subscription::SubscriptionRoot;
@@ -20,18 +22,12 @@ pub fn build_schema(
     db: DatabaseConnection,
     event_sender: broadcast::Sender<DbChangeEvent>,
 ) -> HanSchema {
-    let tool_result_by_parent_id = DataLoader::new(
-        ToolResultByParentIdLoader { db: db.clone() },
-        tokio::spawn,
-    );
-    let tool_result_by_call_id = DataLoader::new(
-        ToolResultByCallIdLoader { db: db.clone() },
-        tokio::spawn,
-    );
-    let hook_result_by_run_id = DataLoader::new(
-        HookResultByRunIdLoader { db: db.clone() },
-        tokio::spawn,
-    );
+    let tool_result_by_parent_id =
+        DataLoader::new(ToolResultByParentIdLoader { db: db.clone() }, tokio::spawn);
+    let tool_result_by_call_id =
+        DataLoader::new(ToolResultByCallIdLoader { db: db.clone() }, tokio::spawn);
+    let hook_result_by_run_id =
+        DataLoader::new(HookResultByRunIdLoader { db: db.clone() }, tokio::spawn);
 
     Schema::build(QueryRoot, MutationRoot, SubscriptionRoot)
         .data(db)
@@ -84,13 +80,19 @@ mod tests {
         // Verify core types exist in SDL
         assert!(sdl.contains("type Query"), "Missing Query");
         assert!(sdl.contains("type MutationRoot"), "Missing MutationRoot");
-        assert!(sdl.contains("type SubscriptionRoot"), "Missing SubscriptionRoot");
+        assert!(
+            sdl.contains("type SubscriptionRoot"),
+            "Missing SubscriptionRoot"
+        );
 
         // Verify key query fields
         assert!(sdl.contains("node("), "Missing node query");
         assert!(sdl.contains("projects("), "Missing projects query");
         assert!(sdl.contains("sessions("), "Missing sessions query");
-        assert!(sdl.contains("coordinatorStatus"), "Missing coordinatorStatus");
+        assert!(
+            sdl.contains("coordinatorStatus"),
+            "Missing coordinatorStatus"
+        );
 
         // Verify Session type
         assert!(sdl.contains("type Session"), "Missing Session type");
@@ -98,39 +100,78 @@ mod tests {
         assert!(sdl.contains("messages("), "Missing messages connection");
 
         // Verify Message and UserMessage interfaces
-        assert!(sdl.contains("interface Message"), "Missing Message interface");
-        assert!(sdl.contains("interface UserMessage"), "Missing UserMessage interface");
-        assert!(sdl.contains("RegularUserMessage"), "Missing RegularUserMessage");
+        assert!(
+            sdl.contains("interface Message"),
+            "Missing Message interface"
+        );
+        assert!(
+            sdl.contains("interface UserMessage"),
+            "Missing UserMessage interface"
+        );
+        assert!(
+            sdl.contains("RegularUserMessage"),
+            "Missing RegularUserMessage"
+        );
         assert!(sdl.contains("AssistantMessage"), "Missing AssistantMessage");
         assert!(sdl.contains("HookRunMessage"), "Missing HookRunMessage");
-        assert!(sdl.contains("McpToolCallMessage"), "Missing McpToolCallMessage");
+        assert!(
+            sdl.contains("McpToolCallMessage"),
+            "Missing McpToolCallMessage"
+        );
 
         // Verify Content Block types
-        assert!(sdl.contains("interface ContentBlock"), "Missing ContentBlock interface");
+        assert!(
+            sdl.contains("interface ContentBlock"),
+            "Missing ContentBlock interface"
+        );
         assert!(sdl.contains("TextBlock"), "Missing TextBlock");
         assert!(sdl.contains("ThinkingBlock"), "Missing ThinkingBlock");
         assert!(sdl.contains("ToolUseBlock"), "Missing ToolUseBlock");
         assert!(sdl.contains("ToolResultBlock"), "Missing ToolResultBlock");
 
         // Verify Connection types
-        assert!(sdl.contains("type MessageConnection"), "Missing MessageConnection");
-        assert!(sdl.contains("type SessionConnection"), "Missing SessionConnection");
+        assert!(
+            sdl.contains("type MessageConnection"),
+            "Missing MessageConnection"
+        );
+        assert!(
+            sdl.contains("type SessionConnection"),
+            "Missing SessionConnection"
+        );
         assert!(sdl.contains("type PageInfo"), "Missing PageInfo");
 
         // Verify Enums
-        assert!(sdl.contains("enum ContentBlockType"), "Missing ContentBlockType enum");
-        assert!(sdl.contains("enum ToolCategory"), "Missing ToolCategory enum");
+        assert!(
+            sdl.contains("enum ContentBlockType"),
+            "Missing ContentBlockType enum"
+        );
+        assert!(
+            sdl.contains("enum ToolCategory"),
+            "Missing ToolCategory enum"
+        );
 
         // Filter types are defined but will be wired into queries in integration
         // They'll appear in SDL once referenced as query arguments
 
         // Verify Subscription types
-        assert!(sdl.contains("nodeUpdated("), "Missing nodeUpdated subscription");
-        assert!(sdl.contains("sessionMessageAdded("), "Missing sessionMessageAdded subscription");
-        assert!(sdl.contains("sessionAdded("), "Missing sessionAdded subscription");
+        assert!(
+            sdl.contains("nodeUpdated("),
+            "Missing nodeUpdated subscription"
+        );
+        assert!(
+            sdl.contains("sessionMessageAdded("),
+            "Missing sessionMessageAdded subscription"
+        );
+        assert!(
+            sdl.contains("sessionAdded("),
+            "Missing sessionAdded subscription"
+        );
 
         // Verify mutations
-        assert!(sdl.contains("togglePlugin("), "Missing togglePlugin mutation");
+        assert!(
+            sdl.contains("togglePlugin("),
+            "Missing togglePlugin mutation"
+        );
 
         // Verify Relay-compatible fields
         assert!(sdl.contains("hasNextPage"), "Missing hasNextPage");
@@ -160,21 +201,39 @@ mod tests {
         assert!(sdl.contains("input SessionFilter"), "Missing SessionFilter");
         assert!(sdl.contains("input ProjectFilter"), "Missing ProjectFilter");
         assert!(sdl.contains("input RepoFilter"), "Missing RepoFilter");
-        assert!(sdl.contains("input NativeTaskFilter"), "Missing NativeTaskFilter");
+        assert!(
+            sdl.contains("input NativeTaskFilter"),
+            "Missing NativeTaskFilter"
+        );
         assert!(sdl.contains("input TaskFilter"), "Missing TaskFilter");
-        assert!(sdl.contains("input HookExecutionFilter"), "Missing HookExecutionFilter");
+        assert!(
+            sdl.contains("input HookExecutionFilter"),
+            "Missing HookExecutionFilter"
+        );
 
         // OrderBy InputObject types
-        assert!(sdl.contains("input MessageOrderBy"), "Missing MessageOrderBy");
-        assert!(sdl.contains("input SessionOrderBy"), "Missing SessionOrderBy");
-        assert!(sdl.contains("input ProjectOrderBy"), "Missing ProjectOrderBy");
+        assert!(
+            sdl.contains("input MessageOrderBy"),
+            "Missing MessageOrderBy"
+        );
+        assert!(
+            sdl.contains("input SessionOrderBy"),
+            "Missing SessionOrderBy"
+        );
+        assert!(
+            sdl.contains("input ProjectOrderBy"),
+            "Missing ProjectOrderBy"
+        );
         assert!(sdl.contains("input RepoOrderBy"), "Missing RepoOrderBy");
 
         // Filter primitive types
         assert!(sdl.contains("input StringFilter"), "Missing StringFilter");
         assert!(sdl.contains("input IntFilter"), "Missing IntFilter");
         assert!(sdl.contains("input FloatFilter"), "Missing FloatFilter");
-        assert!(sdl.contains("enum OrderDirection"), "Missing OrderDirection");
+        assert!(
+            sdl.contains("enum OrderDirection"),
+            "Missing OrderDirection"
+        );
     }
 
     /// Export schema SDL to browse-client/schema.graphql.
@@ -186,7 +245,13 @@ mod tests {
         let sdl = export_sdl(&schema);
         let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         // han-api is at packages/han-rs/crates/han-api, go up to packages/
-        let packages_dir = manifest.parent().unwrap().parent().unwrap().parent().unwrap();
+        let packages_dir = manifest
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap();
         let out = packages_dir.join("browse-client").join("schema.graphql");
         std::fs::write(&out, &sdl).expect("Failed to write schema.graphql");
         eprintln!("Wrote {} bytes to {}", sdl.len(), out.display());

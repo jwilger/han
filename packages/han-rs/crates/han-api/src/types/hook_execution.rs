@@ -1,8 +1,8 @@
 //! Hook execution GraphQL type.
 
-use async_graphql::*;
-use crate::node::encode_global_id;
 use crate::connection::PageInfo;
+use crate::node::encode_global_id;
+use async_graphql::*;
 use han_graphql_derive::GraphQLEntity;
 
 /// Transform: i32 → bool (nonzero is true).
@@ -17,7 +17,7 @@ fn nonzero_i32_to_bool(v: i32) -> bool {
     model = "han_db::entities::hook_executions::Model",
     entity = "han_db::entities::hook_executions::Entity",
     columns = "han_db::entities::hook_executions::Column",
-    type_name = "HookExecution",
+    type_name = "HookExecution"
 )]
 pub struct HookExecution {
     #[graphql(skip)]
@@ -47,9 +47,13 @@ pub struct HookExecution {
 #[ComplexObject]
 impl HookExecution {
     /// Global ID.
-    pub async fn id(&self) -> ID { encode_global_id("HookExecution", &self.raw_id) }
+    pub async fn id(&self) -> ID {
+        encode_global_id("HookExecution", &self.raw_id)
+    }
     /// Timestamp alias for executed_at (browse-client compat).
-    async fn timestamp(&self) -> &str { &self.executed_at }
+    async fn timestamp(&self) -> &str {
+        &self.executed_at
+    }
 }
 
 /// Hook execution edge.

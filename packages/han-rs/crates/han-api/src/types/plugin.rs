@@ -1,7 +1,7 @@
 //! Plugin GraphQL type.
 
-use async_graphql::*;
 use crate::node::encode_global_id;
+use async_graphql::*;
 
 /// Plugin data.
 #[derive(Debug, Clone)]
@@ -16,12 +16,24 @@ pub struct Plugin {
 
 #[Object]
 impl Plugin {
-    async fn id(&self) -> ID { encode_global_id("Plugin", &self.name) }
-    async fn name(&self) -> Option<&str> { Some(&self.name) }
-    async fn enabled(&self) -> Option<bool> { Some(self.enabled) }
-    async fn scope(&self) -> Option<crate::types::enums::PluginScope> { self.scope }
-    async fn marketplace(&self) -> Option<&str> { self.marketplace.as_deref() }
-    async fn category(&self) -> Option<&str> { self.category.as_deref() }
+    async fn id(&self) -> ID {
+        encode_global_id("Plugin", &self.name)
+    }
+    async fn name(&self) -> Option<&str> {
+        Some(&self.name)
+    }
+    async fn enabled(&self) -> Option<bool> {
+        Some(self.enabled)
+    }
+    async fn scope(&self) -> Option<crate::types::enums::PluginScope> {
+        self.scope
+    }
+    async fn marketplace(&self) -> Option<&str> {
+        self.marketplace.as_deref()
+    }
+    async fn category(&self) -> Option<&str> {
+        self.category.as_deref()
+    }
 }
 
 /// Plugin statistics matching browse-client schema.

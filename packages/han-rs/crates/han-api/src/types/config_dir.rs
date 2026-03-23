@@ -1,7 +1,7 @@
 //! Config directory GraphQL type.
 
-use async_graphql::*;
 use crate::node::encode_global_id;
+use async_graphql::*;
 use han_graphql_derive::GraphQLEntity;
 
 /// Transform: i32 → bool (nonzero is true).
@@ -16,7 +16,7 @@ fn nonzero_i32_to_bool(v: i32) -> bool {
     model = "han_db::entities::config_dirs::Model",
     entity = "han_db::entities::config_dirs::Entity",
     columns = "han_db::entities::config_dirs::Column",
-    type_name = "ConfigDir",
+    type_name = "ConfigDir"
 )]
 pub struct ConfigDir {
     #[graphql(skip)]
@@ -37,7 +37,9 @@ pub struct ConfigDir {
 #[ComplexObject]
 impl ConfigDir {
     /// Global ID.
-    pub async fn id(&self) -> ID { encode_global_id("ConfigDir", &self.raw_id) }
+    pub async fn id(&self) -> ID {
+        encode_global_id("ConfigDir", &self.raw_id)
+    }
 }
 
 #[cfg(test)]

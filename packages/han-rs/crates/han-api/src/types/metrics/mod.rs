@@ -1,9 +1,8 @@
 //! Metrics GraphQL types.
 
-use async_graphql::*;
 use crate::connection::PageInfo;
 use crate::node::encode_global_id;
-
+use async_graphql::*;
 
 /// Metrics task data.
 #[derive(Debug, Clone)]
@@ -24,17 +23,27 @@ pub struct Task {
 
 #[Object]
 impl Task {
-    async fn id(&self) -> ID { encode_global_id("Task", &self.task_id) }
-    async fn task_id(&self) -> &str { &self.task_id }
-    async fn description(&self) -> &str { &self.description }
-    async fn task_type(&self) -> &str { &self.task_type }
+    async fn id(&self) -> ID {
+        encode_global_id("Task", &self.task_id)
+    }
+    async fn task_id(&self) -> &str {
+        &self.task_id
+    }
+    async fn description(&self) -> &str {
+        &self.description
+    }
+    async fn task_type(&self) -> &str {
+        &self.task_type
+    }
 
     /// Task type enum (FIX, IMPLEMENTATION, REFACTOR, RESEARCH).
     #[graphql(name = "type")]
     async fn type_enum(&self) -> Option<crate::types::enums::TaskType> {
         match self.task_type.to_lowercase().as_str() {
             "fix" | "bugfix" | "bug" => Some(crate::types::enums::TaskType::Fix),
-            "implementation" | "feature" | "implement" => Some(crate::types::enums::TaskType::Implementation),
+            "implementation" | "feature" | "implement" => {
+                Some(crate::types::enums::TaskType::Implementation)
+            }
             "refactor" | "refactoring" => Some(crate::types::enums::TaskType::Refactor),
             "research" | "investigate" => Some(crate::types::enums::TaskType::Research),
             _ => Some(crate::types::enums::TaskType::Implementation),
@@ -53,15 +62,29 @@ impl Task {
         }
     }
 
-    async fn outcome(&self) -> Option<&str> { self.outcome.as_deref() }
-    async fn confidence(&self) -> Option<f64> { self.confidence }
-    async fn notes(&self) -> Option<&str> { self.notes.as_deref() }
-    async fn files_modified(&self) -> Option<Vec<String>> {
-        self.files_modified.as_ref().and_then(|f| serde_json::from_str(f).ok())
+    async fn outcome(&self) -> Option<&str> {
+        self.outcome.as_deref()
     }
-    async fn tests_added(&self) -> Option<i32> { self.tests_added }
-    async fn started_at(&self) -> &str { &self.started_at }
-    async fn completed_at(&self) -> Option<&str> { self.completed_at.as_deref() }
+    async fn confidence(&self) -> Option<f64> {
+        self.confidence
+    }
+    async fn notes(&self) -> Option<&str> {
+        self.notes.as_deref()
+    }
+    async fn files_modified(&self) -> Option<Vec<String>> {
+        self.files_modified
+            .as_ref()
+            .and_then(|f| serde_json::from_str(f).ok())
+    }
+    async fn tests_added(&self) -> Option<i32> {
+        self.tests_added
+    }
+    async fn started_at(&self) -> &str {
+        &self.started_at
+    }
+    async fn completed_at(&self) -> Option<&str> {
+        self.completed_at.as_deref()
+    }
 
     /// Duration in seconds (computed from startedAt/completedAt).
     async fn duration_seconds(&self) -> Option<i32> {
@@ -142,7 +165,7 @@ pub struct TaskOutcomeCount {
 #[derive(han_graphql_derive::EntityFilter)]
 #[entity_filter(
     entity = "han_db::entities::tasks::Entity",
-    columns = "han_db::entities::tasks::Column",
+    columns = "han_db::entities::tasks::Column"
 )]
 struct TaskFilterSource {
     id: String,
@@ -191,7 +214,10 @@ mod tests {
         assert_eq!(t.outcome, Some("success".into()));
         assert!((t.confidence.unwrap() - 0.95).abs() < f64::EPSILON);
         assert_eq!(t.notes, Some("Resolved quickly".into()));
-        assert_eq!(t.files_modified, Some(r#"["src/auth.rs","src/main.rs"]"#.into()));
+        assert_eq!(
+            t.files_modified,
+            Some(r#"["src/auth.rs","src/main.rs"]"#.into())
+        );
         assert_eq!(t.tests_added, Some(3));
         assert_eq!(t.started_at, "2024-01-01T00:00:00Z");
         assert_eq!(t.completed_at, Some("2024-01-01T01:00:00Z".into()));

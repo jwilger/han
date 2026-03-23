@@ -1,7 +1,7 @@
 //! Team GraphQL types (for hosted mode).
 
-use async_graphql::*;
 use crate::node::encode_global_id;
+use async_graphql::*;
 
 /// User data (hosted mode).
 #[derive(Debug, Clone)]
@@ -14,10 +14,18 @@ pub struct User {
 
 #[Object]
 impl User {
-    async fn id(&self) -> ID { encode_global_id("User", &self.user_id) }
-    async fn name(&self) -> Option<&str> { self.display_name.as_deref() }
-    async fn email(&self) -> Option<&str> { self.email.as_deref() }
-    async fn avatar_url(&self) -> Option<&str> { None }
+    async fn id(&self) -> ID {
+        encode_global_id("User", &self.user_id)
+    }
+    async fn name(&self) -> Option<&str> {
+        self.display_name.as_deref()
+    }
+    async fn email(&self) -> Option<&str> {
+        self.email.as_deref()
+    }
+    async fn avatar_url(&self) -> Option<&str> {
+        None
+    }
 }
 
 /// Organization data (hosted mode).
@@ -30,9 +38,15 @@ pub struct Org {
 
 #[Object]
 impl Org {
-    async fn id(&self) -> ID { encode_global_id("Org", &self.org_id) }
-    async fn name(&self) -> &str { &self.name }
-    async fn slug(&self) -> Option<&str> { self.slug.as_deref() }
+    async fn id(&self) -> ID {
+        encode_global_id("Org", &self.org_id)
+    }
+    async fn name(&self) -> &str {
+        &self.name
+    }
+    async fn slug(&self) -> Option<&str> {
+        self.slug.as_deref()
+    }
 }
 
 /// Team member data (hosted mode).
@@ -47,11 +61,21 @@ pub struct TeamMember {
 
 #[Object]
 impl TeamMember {
-    async fn id(&self) -> ID { encode_global_id("TeamMember", &self.user_id) }
-    async fn display_name(&self) -> Option<&str> { self.display_name.as_deref() }
-    async fn email(&self) -> Option<&str> { self.email.as_deref() }
-    async fn role(&self) -> &str { &self.role }
-    async fn joined_at(&self) -> Option<&str> { self.joined_at.as_deref() }
+    async fn id(&self) -> ID {
+        encode_global_id("TeamMember", &self.user_id)
+    }
+    async fn display_name(&self) -> Option<&str> {
+        self.display_name.as_deref()
+    }
+    async fn email(&self) -> Option<&str> {
+        self.email.as_deref()
+    }
+    async fn role(&self) -> &str {
+        &self.role
+    }
+    async fn joined_at(&self) -> Option<&str> {
+        self.joined_at.as_deref()
+    }
 }
 
 /// Team metrics data (browse-client compatible).

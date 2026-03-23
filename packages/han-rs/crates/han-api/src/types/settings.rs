@@ -126,7 +126,9 @@ pub struct MemoryQueryType;
 #[Object(name = "MemoryQuery")]
 impl MemoryQueryType {
     /// All project and user rules across registered projects (stub).
-    async fn rules(&self) -> Option<Vec<MemoryRule>> { Some(vec![]) }
+    async fn rules(&self) -> Option<Vec<MemoryRule>> {
+        Some(vec![])
+    }
 
     /// Search memory with a question (stub).
     async fn search(
@@ -134,7 +136,9 @@ impl MemoryQueryType {
         _query: String,
         _project_path: String,
         _layers: Option<Vec<String>>,
-    ) -> Option<MemorySearchResult> { None }
+    ) -> Option<MemorySearchResult> {
+        None
+    }
 }
 
 /// A memory rule.

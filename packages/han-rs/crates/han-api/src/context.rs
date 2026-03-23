@@ -113,10 +113,7 @@ pub struct GraphQLContext {
 
 impl GraphQLContext {
     /// Create a new context for a request.
-    pub fn new(
-        db: DatabaseConnection,
-        event_sender: broadcast::Sender<DbChangeEvent>,
-    ) -> Self {
+    pub fn new(db: DatabaseConnection, event_sender: broadcast::Sender<DbChangeEvent>) -> Self {
         let loaders = HanLoaders::new(db.clone());
         Self {
             db,
@@ -141,7 +138,9 @@ mod tests {
 
     #[test]
     fn db_change_event_session_updated() {
-        let e = DbChangeEvent::SessionUpdated { session_id: "s1".into() };
+        let e = DbChangeEvent::SessionUpdated {
+            session_id: "s1".into(),
+        };
         let debug = format!("{:?}", e);
         assert!(debug.contains("SessionUpdated"));
         assert!(debug.contains("s1"));
@@ -154,7 +153,11 @@ mod tests {
             message_index: 42,
         };
         let cloned = e.clone();
-        if let DbChangeEvent::SessionMessageAdded { session_id, message_index } = cloned {
+        if let DbChangeEvent::SessionMessageAdded {
+            session_id,
+            message_index,
+        } = cloned
+        {
             assert_eq!(session_id, "s1");
             assert_eq!(message_index, 42);
         } else {
@@ -169,7 +172,12 @@ mod tests {
             parent_id: Some("p1".into()),
             project_id: Some("proj-1".into()),
         };
-        if let DbChangeEvent::SessionAdded { session_id, parent_id, project_id } = e {
+        if let DbChangeEvent::SessionAdded {
+            session_id,
+            parent_id,
+            project_id,
+        } = e
+        {
             assert_eq!(session_id, "s1");
             assert_eq!(parent_id, Some("p1".into()));
             assert_eq!(project_id, Some("proj-1".into()));
@@ -185,7 +193,12 @@ mod tests {
             success: true,
             duration_ms: 100,
         };
-        if let DbChangeEvent::ToolResultAdded { success, duration_ms, .. } = e {
+        if let DbChangeEvent::ToolResultAdded {
+            success,
+            duration_ms,
+            ..
+        } = e
+        {
             assert!(success);
             assert_eq!(duration_ms, 100);
         }
@@ -201,7 +214,12 @@ mod tests {
             success: false,
             duration_ms: 500,
         };
-        if let DbChangeEvent::HookResultAdded { plugin_name, success, .. } = e {
+        if let DbChangeEvent::HookResultAdded {
+            plugin_name,
+            success,
+            ..
+        } = e
+        {
             assert_eq!(plugin_name, "biome");
             assert!(!success);
         }
@@ -227,7 +245,13 @@ mod tests {
             in_progress_count: 1,
             completed_count: 2,
         };
-        if let DbChangeEvent::SessionTodosChanged { todo_count, in_progress_count, completed_count, .. } = e {
+        if let DbChangeEvent::SessionTodosChanged {
+            todo_count,
+            in_progress_count,
+            completed_count,
+            ..
+        } = e
+        {
             assert_eq!(todo_count, 3);
             assert_eq!(in_progress_count, 1);
             assert_eq!(completed_count, 2);
@@ -241,7 +265,12 @@ mod tests {
             file_count: 5,
             tool_name: "Write".into(),
         };
-        if let DbChangeEvent::SessionFilesChanged { file_count, tool_name, .. } = e {
+        if let DbChangeEvent::SessionFilesChanged {
+            file_count,
+            tool_name,
+            ..
+        } = e
+        {
             assert_eq!(file_count, 5);
             assert_eq!(tool_name, "Write");
         }
@@ -262,7 +291,9 @@ mod tests {
 
     #[test]
     fn db_change_event_repo_added() {
-        let e = DbChangeEvent::RepoAdded { repo_id: "r1".into() };
+        let e = DbChangeEvent::RepoAdded {
+            repo_id: "r1".into(),
+        };
         if let DbChangeEvent::RepoAdded { repo_id } = e {
             assert_eq!(repo_id, "r1");
         }
@@ -274,7 +305,11 @@ mod tests {
             project_id: "p1".into(),
             parent_id: None,
         };
-        if let DbChangeEvent::ProjectAdded { project_id, parent_id } = e {
+        if let DbChangeEvent::ProjectAdded {
+            project_id,
+            parent_id,
+        } = e
+        {
             assert_eq!(project_id, "p1");
             assert!(parent_id.is_none());
         }

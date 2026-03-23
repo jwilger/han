@@ -1,7 +1,9 @@
 //! Repo (git repository) GraphQL type.
 
 use async_graphql::*;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QuerySelect,
+};
 
 use crate::node::encode_global_id;
 use han_graphql_derive::GraphQLEntity;
@@ -13,7 +15,7 @@ use han_graphql_derive::GraphQLEntity;
     model = "han_db::entities::repos::Model",
     entity = "han_db::entities::repos::Entity",
     columns = "han_db::entities::repos::Column",
-    type_name = "Repo",
+    type_name = "Repo"
 )]
 pub struct Repo {
     #[graphql(skip)]
@@ -36,9 +38,13 @@ impl Repo {
 
     // Backwards-compatible fields for browse-client
     /// Alias for raw_id.
-    async fn repo_id(&self) -> &str { &self.raw_id }
+    async fn repo_id(&self) -> &str {
+        &self.raw_id
+    }
     /// Repo path (uses remote).
-    async fn path(&self) -> &str { &self.remote }
+    async fn path(&self) -> &str {
+        &self.remote
+    }
 
     /// Total sessions count across all projects in this repo.
     async fn total_sessions(&self, ctx: &Context<'_>) -> Result<Option<i32>> {
@@ -65,17 +71,27 @@ impl Repo {
     }
 
     /// Last activity timestamp.
-    async fn last_activity(&self) -> Option<&str> { Some(&self.updated_at) }
+    async fn last_activity(&self) -> Option<&str> {
+        Some(&self.updated_at)
+    }
 
     /// Projects in this repo.
-    async fn projects(&self, ctx: &Context<'_>) -> Result<Option<Vec<crate::types::project::Project>>> {
+    async fn projects(
+        &self,
+        ctx: &Context<'_>,
+    ) -> Result<Option<Vec<crate::types::project::Project>>> {
         let db = ctx.data::<DatabaseConnection>()?;
         let models = han_db::entities::projects::Entity::find()
             .filter(han_db::entities::projects::Column::RepoId.eq(&self.raw_id))
             .all(db)
             .await
             .map_err(|e| Error::new(e.to_string()))?;
-        Ok(Some(models.into_iter().map(crate::types::project::Project::from).collect()))
+        Ok(Some(
+            models
+                .into_iter()
+                .map(crate::types::project::Project::from)
+                .collect(),
+        ))
     }
 }
 

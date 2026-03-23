@@ -1,7 +1,7 @@
 //! Sentiment analysis GraphQL type.
 
-use async_graphql::*;
 use crate::node::encode_global_id;
+use async_graphql::*;
 
 /// Sentiment analysis result for a user message.
 #[derive(Debug, Clone)]

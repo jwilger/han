@@ -1,7 +1,7 @@
 //! File change GraphQL types.
 
-use async_graphql::*;
 use crate::connection::PageInfo;
+use async_graphql::*;
 
 /// A file change recorded during a session.
 #[derive(Debug, Clone, SimpleObject)]

@@ -86,11 +86,7 @@ impl MutationRoot {
     }
 
     /// Unregister a config directory.
-    async fn unregister_config_dir(
-        &self,
-        ctx: &Context<'_>,
-        _path: String,
-    ) -> Result<bool> {
+    async fn unregister_config_dir(&self, ctx: &Context<'_>, _path: String) -> Result<bool> {
         let _db = ctx.data::<DatabaseConnection>()?;
         Ok(true)
     }

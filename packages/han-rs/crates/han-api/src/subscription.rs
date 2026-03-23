@@ -6,12 +6,12 @@ use async_graphql::*;
 use han_db::entities::{messages, projects, sessions};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use tokio::sync::broadcast;
-use tokio_stream::{Stream, StreamExt, wrappers::BroadcastStream};
+use tokio_stream::{wrappers::BroadcastStream, Stream, StreamExt};
 
 use crate::context::DbChangeEvent;
 use crate::node::{decode_global_id, encode_msg_cursor, encode_session_cursor};
 use crate::query::{enrich_single_session, session_model_to_data};
-use crate::types::messages::{MessageData, MessageEdge, discriminate_message};
+use crate::types::messages::{discriminate_message, MessageData, MessageEdge};
 use crate::types::sessions::{SessionData, SessionEdge};
 
 /// Subscription root type.
@@ -32,8 +32,12 @@ pub struct NodeUpdatedPayload {
 
 #[Object]
 impl NodeUpdatedPayload {
-    async fn id(&self) -> &str { &self.id }
-    async fn typename(&self) -> &str { &self.typename }
+    async fn id(&self) -> &str {
+        &self.id
+    }
+    async fn typename(&self) -> &str {
+        &self.typename
+    }
 
     /// The updated node, loaded from the database.
     async fn node(&self, ctx: &Context<'_>) -> Result<Option<crate::types::node::Node>> {
@@ -76,8 +80,12 @@ pub struct SessionMessageAddedPayload {
 
 #[Object]
 impl SessionMessageAddedPayload {
-    async fn session_id(&self) -> &str { &self.session_id }
-    async fn message_index(&self) -> i32 { self.message_index }
+    async fn session_id(&self) -> &str {
+        &self.session_id
+    }
+    async fn message_index(&self) -> i32 {
+        self.message_index
+    }
 
     /// The newest message edge for Relay @prependEdge.
     ///
@@ -143,9 +151,15 @@ pub struct SessionAddedPayload {
 
 #[Object]
 impl SessionAddedPayload {
-    async fn session_id(&self) -> &str { &self.session_id }
-    async fn parent_id(&self) -> Option<&str> { self.parent_id.as_deref() }
-    async fn project_id(&self) -> Option<&str> { self.project_id.as_deref() }
+    async fn session_id(&self) -> &str {
+        &self.session_id
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.parent_id.as_deref()
+    }
+    async fn project_id(&self) -> Option<&str> {
+        self.project_id.as_deref()
+    }
 
     /// The new session edge for Relay @prependEdge.
     async fn new_session_edge(&self, ctx: &Context<'_>) -> Result<Option<SessionEdge>> {
@@ -251,15 +265,14 @@ impl SubscriptionRoot {
         let receiver = sender.subscribe();
         let target_id = id.to_string();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::NodeUpdated { id, typename }) = event {
-                    if id == target_id {
-                        return Some(NodeUpdatedPayload { id, typename });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::NodeUpdated { id, typename }) = event {
+                if id == target_id {
+                    return Some(NodeUpdatedPayload { id, typename });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to new messages in a session. Use "*" for all sessions.
@@ -272,15 +285,21 @@ impl SubscriptionRoot {
         let receiver = sender.subscribe();
         let target = session_id.to_string();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::SessionMessageAdded { session_id, message_index }) = event {
-                    if target == "*" || session_id == target {
-                        return Some(SessionMessageAddedPayload { session_id, message_index });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::SessionMessageAdded {
+                session_id,
+                message_index,
+            }) = event
+            {
+                if target == "*" || session_id == target {
+                    return Some(SessionMessageAddedPayload {
+                        session_id,
+                        message_index,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to tool result for a specific call ID.
@@ -292,19 +311,27 @@ impl SubscriptionRoot {
         let sender = ctx.data::<broadcast::Sender<DbChangeEvent>>()?;
         let receiver = sender.subscribe();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::ToolResultAdded {
-                    session_id, call_id: cid, result_type, success, duration_ms,
-                }) = event {
-                    if cid == call_id {
-                        return Some(ToolResultAddedPayload {
-                            session_id, call_id: cid, result_type, success, duration_ms,
-                        });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::ToolResultAdded {
+                session_id,
+                call_id: cid,
+                result_type,
+                success,
+                duration_ms,
+            }) = event
+            {
+                if cid == call_id {
+                    return Some(ToolResultAddedPayload {
+                        session_id,
+                        call_id: cid,
+                        result_type,
+                        success,
+                        duration_ms,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to hook result for a specific hook run ID.
@@ -316,19 +343,29 @@ impl SubscriptionRoot {
         let sender = ctx.data::<broadcast::Sender<DbChangeEvent>>()?;
         let receiver = sender.subscribe();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::HookResultAdded {
-                    session_id, hook_run_id: hid, plugin_name, hook_name, success, duration_ms,
-                }) = event {
-                    if hid == hook_run_id {
-                        return Some(HookResultAddedPayload {
-                            session_id, hook_run_id: hid, plugin_name, hook_name, success, duration_ms,
-                        });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::HookResultAdded {
+                session_id,
+                hook_run_id: hid,
+                plugin_name,
+                hook_name,
+                success,
+                duration_ms,
+            }) = event
+            {
+                if hid == hook_run_id {
+                    return Some(HookResultAddedPayload {
+                        session_id,
+                        hook_run_id: hid,
+                        plugin_name,
+                        hook_name,
+                        success,
+                        duration_ms,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to todo changes for a session.
@@ -341,19 +378,25 @@ impl SubscriptionRoot {
         let receiver = sender.subscribe();
         let target = session_id.to_string();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::SessionTodosChanged {
-                    session_id, todo_count, in_progress_count, completed_count,
-                }) = event {
-                    if session_id == target {
-                        return Some(SessionTodosChangedPayload {
-                            session_id, todo_count, in_progress_count, completed_count,
-                        });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::SessionTodosChanged {
+                session_id,
+                todo_count,
+                in_progress_count,
+                completed_count,
+            }) = event
+            {
+                if session_id == target {
+                    return Some(SessionTodosChangedPayload {
+                        session_id,
+                        todo_count,
+                        in_progress_count,
+                        completed_count,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to file changes for a session.
@@ -366,19 +409,23 @@ impl SubscriptionRoot {
         let receiver = sender.subscribe();
         let target = session_id.to_string();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::SessionFilesChanged {
-                    session_id, file_count, tool_name,
-                }) = event {
-                    if session_id == target {
-                        return Some(SessionFilesChangedPayload {
-                            session_id, file_count, tool_name,
-                        });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::SessionFilesChanged {
+                session_id,
+                file_count,
+                tool_name,
+            }) = event
+            {
+                if session_id == target {
+                    return Some(SessionFilesChangedPayload {
+                        session_id,
+                        file_count,
+                        tool_name,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to hook events for a session.
@@ -391,19 +438,25 @@ impl SubscriptionRoot {
         let receiver = sender.subscribe();
         let target = session_id.to_string();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::SessionHooksChanged {
-                    session_id, plugin_name, hook_name, event_type,
-                }) = event {
-                    if session_id == target {
-                        return Some(SessionHooksChangedPayload {
-                            session_id, plugin_name, hook_name, event_type,
-                        });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::SessionHooksChanged {
+                session_id,
+                plugin_name,
+                hook_name,
+                event_type,
+            }) = event
+            {
+                if session_id == target {
+                    return Some(SessionHooksChangedPayload {
+                        session_id,
+                        plugin_name,
+                        hook_name,
+                        event_type,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     /// Subscribe to new sessions. Filter by projectId or receive all.
@@ -418,38 +471,42 @@ impl SubscriptionRoot {
         let target_parent = parent_id.map(|id| id.to_string());
         let target_project = project_id.map(|id| id.to_string());
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::SessionAdded { session_id, parent_id, project_id }) = event {
-                    // Filter by parent_id if specified
-                    if target_parent.is_some() && parent_id != target_parent {
-                        return None;
-                    }
-                    // Filter by project_id if specified
-                    if target_project.is_some() && project_id != target_project {
-                        return None;
-                    }
-                    return Some(SessionAddedPayload { session_id, parent_id, project_id });
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::SessionAdded {
+                session_id,
+                parent_id,
+                project_id,
+            }) = event
+            {
+                // Filter by parent_id if specified
+                if target_parent.is_some() && parent_id != target_parent {
+                    return None;
                 }
-                None
-            }))
+                // Filter by project_id if specified
+                if target_project.is_some() && project_id != target_project {
+                    return None;
+                }
+                return Some(SessionAddedPayload {
+                    session_id,
+                    parent_id,
+                    project_id,
+                });
+            }
+            None
+        }))
     }
 
     /// Subscribe to new repos.
-    async fn repo_added(
-        &self,
-        ctx: &Context<'_>,
-    ) -> Result<impl Stream<Item = RepoAddedPayload>> {
+    async fn repo_added(&self, ctx: &Context<'_>) -> Result<impl Stream<Item = RepoAddedPayload>> {
         let sender = ctx.data::<broadcast::Sender<DbChangeEvent>>()?;
         let receiver = sender.subscribe();
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(|event| {
-                if let Ok(DbChangeEvent::RepoAdded { repo_id }) = event {
-                    return Some(RepoAddedPayload { repo_id });
-                }
-                None
-            }))
+        Ok(BroadcastStream::new(receiver).filter_map(|event| {
+            if let Ok(DbChangeEvent::RepoAdded { repo_id }) = event {
+                return Some(RepoAddedPayload { repo_id });
+            }
+            None
+        }))
     }
 
     /// Subscribe to new projects.
@@ -462,15 +519,21 @@ impl SubscriptionRoot {
         let receiver = sender.subscribe();
         let target = parent_id.map(|id| id.to_string());
 
-        Ok(BroadcastStream::new(receiver)
-            .filter_map(move |event| {
-                if let Ok(DbChangeEvent::ProjectAdded { project_id, parent_id }) = event {
-                    if target.is_none() || parent_id == target {
-                        return Some(ProjectAddedPayload { project_id, parent_id });
-                    }
+        Ok(BroadcastStream::new(receiver).filter_map(move |event| {
+            if let Ok(DbChangeEvent::ProjectAdded {
+                project_id,
+                parent_id,
+            }) = event
+            {
+                if target.is_none() || parent_id == target {
+                    return Some(ProjectAddedPayload {
+                        project_id,
+                        parent_id,
+                    });
                 }
-                None
-            }))
+            }
+            None
+        }))
     }
 
     // ========================================================================
@@ -566,7 +629,10 @@ mod tests {
 
     #[test]
     fn node_updated_payload_clone() {
-        let p = NodeUpdatedPayload { id: "x".into(), typename: "Y".into() };
+        let p = NodeUpdatedPayload {
+            id: "x".into(),
+            typename: "Y".into(),
+        };
         let p2 = p.clone();
         assert_eq!(p.id, p2.id);
         assert_eq!(p.typename, p2.typename);
@@ -671,7 +737,9 @@ mod tests {
 
     #[test]
     fn repo_added_payload() {
-        let p = RepoAddedPayload { repo_id: "r1".into() };
+        let p = RepoAddedPayload {
+            repo_id: "r1".into(),
+        };
         assert_eq!(p.repo_id, "r1");
     }
 
@@ -687,15 +755,82 @@ mod tests {
 
     #[test]
     fn all_payloads_implement_debug() {
-        let _ = format!("{:?}", NodeUpdatedPayload { id: "".into(), typename: "".into() });
-        let _ = format!("{:?}", SessionMessageAddedPayload { session_id: "".into(), message_index: 0 });
-        let _ = format!("{:?}", SessionAddedPayload { session_id: "".into(), parent_id: None, project_id: None });
-        let _ = format!("{:?}", ToolResultAddedPayload { session_id: "".into(), call_id: "".into(), result_type: "".into(), success: false, duration_ms: 0 });
-        let _ = format!("{:?}", HookResultAddedPayload { session_id: "".into(), hook_run_id: "".into(), plugin_name: "".into(), hook_name: "".into(), success: false, duration_ms: 0 });
-        let _ = format!("{:?}", SessionTodosChangedPayload { session_id: "".into(), todo_count: 0, in_progress_count: 0, completed_count: 0 });
-        let _ = format!("{:?}", SessionFilesChangedPayload { session_id: "".into(), file_count: 0, tool_name: "".into() });
-        let _ = format!("{:?}", SessionHooksChangedPayload { session_id: "".into(), plugin_name: "".into(), hook_name: "".into(), event_type: "".into() });
+        let _ = format!(
+            "{:?}",
+            NodeUpdatedPayload {
+                id: "".into(),
+                typename: "".into()
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            SessionMessageAddedPayload {
+                session_id: "".into(),
+                message_index: 0
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            SessionAddedPayload {
+                session_id: "".into(),
+                parent_id: None,
+                project_id: None
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            ToolResultAddedPayload {
+                session_id: "".into(),
+                call_id: "".into(),
+                result_type: "".into(),
+                success: false,
+                duration_ms: 0
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            HookResultAddedPayload {
+                session_id: "".into(),
+                hook_run_id: "".into(),
+                plugin_name: "".into(),
+                hook_name: "".into(),
+                success: false,
+                duration_ms: 0
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            SessionTodosChangedPayload {
+                session_id: "".into(),
+                todo_count: 0,
+                in_progress_count: 0,
+                completed_count: 0
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            SessionFilesChangedPayload {
+                session_id: "".into(),
+                file_count: 0,
+                tool_name: "".into()
+            }
+        );
+        let _ = format!(
+            "{:?}",
+            SessionHooksChangedPayload {
+                session_id: "".into(),
+                plugin_name: "".into(),
+                hook_name: "".into(),
+                event_type: "".into()
+            }
+        );
         let _ = format!("{:?}", RepoAddedPayload { repo_id: "".into() });
-        let _ = format!("{:?}", ProjectAddedPayload { project_id: "".into(), parent_id: None });
+        let _ = format!(
+            "{:?}",
+            ProjectAddedPayload {
+                project_id: "".into(),
+                parent_id: None
+            }
+        );
     }
 }

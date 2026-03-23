@@ -9,14 +9,14 @@
 //! fragments use `... on UserMessage` and `... on AssistantMessage` etc.
 //! within a Message context.
 
-use async_graphql::*;
 use async_graphql::dataloader::DataLoader;
+use async_graphql::*;
 use han_db::entities::messages;
 
 use crate::connection::PageInfo;
 use crate::loaders::{HookResultByRunIdLoader, ToolResultByCallIdLoader};
 use crate::node::{encode_global_id, encode_msg_cursor};
-use crate::types::content_blocks::{ContentBlock, parse_content_blocks};
+use crate::types::content_blocks::{parse_content_blocks, ContentBlock};
 use crate::types::sentiment::SentimentAnalysis;
 
 // ============================================================================
@@ -119,7 +119,7 @@ impl MessageData {
     field(name = "raw_json", ty = "Option<&str>"),
     field(name = "agent_id", ty = "Option<&str>"),
     field(name = "parent_id", ty = "Option<&str>"),
-    field(name = "search_text", ty = "Option<String>"),
+    field(name = "search_text", ty = "Option<String>")
 )]
 pub enum Message {
     RegularUser(RegularUserMessage),
@@ -166,7 +166,7 @@ pub enum Message {
     field(name = "search_text", ty = "Option<String>"),
     field(name = "content", ty = "Option<String>"),
     field(name = "content_blocks", ty = "Option<Vec<ContentBlock>>"),
-    field(name = "sentiment_analysis", ty = "Option<SentimentAnalysis>"),
+    field(name = "sentiment_analysis", ty = "Option<SentimentAnalysis>")
 )]
 pub enum UserMessage {
     Regular(RegularUserMessage),
@@ -188,14 +188,30 @@ pub struct RegularUserMessage {
 
 #[Object]
 impl RegularUserMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
         Some(parse_content_blocks(
             self.data.content.as_deref(),
@@ -203,7 +219,9 @@ impl RegularUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { self.data.sentiment() }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> {
+        self.data.sentiment()
+    }
 }
 
 /// A command user message (/command invocations).
@@ -214,14 +232,30 @@ pub struct CommandUserMessage {
 
 #[Object]
 impl CommandUserMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
         Some(parse_content_blocks(
             self.data.content.as_deref(),
@@ -229,7 +263,9 @@ impl CommandUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { None }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> {
+        None
+    }
     /// The command that was invoked.
     async fn command_name(&self) -> Option<String> {
         parse_user_metadata_field(&self.data.raw_json, "command")
@@ -244,14 +280,30 @@ pub struct InterruptUserMessage {
 
 #[Object]
 impl InterruptUserMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
         Some(parse_content_blocks(
             self.data.content.as_deref(),
@@ -259,7 +311,9 @@ impl InterruptUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { self.data.sentiment() }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> {
+        self.data.sentiment()
+    }
 }
 
 /// A meta user message (system-injected, not shown to user).
@@ -270,14 +324,30 @@ pub struct MetaUserMessage {
 
 #[Object]
 impl MetaUserMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
         Some(parse_content_blocks(
             self.data.content.as_deref(),
@@ -285,7 +355,9 @@ impl MetaUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { self.data.sentiment() }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> {
+        self.data.sentiment()
+    }
 }
 
 /// A user message that is actually a tool result container.
@@ -296,14 +368,30 @@ pub struct ToolResultUserMessage {
 
 #[Object]
 impl ToolResultUserMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
         Some(parse_content_blocks(
             self.data.content.as_deref(),
@@ -311,12 +399,18 @@ impl ToolResultUserMessage {
             Some(&self.data.session_id),
         ))
     }
-    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> { None }
+    async fn sentiment_analysis(&self) -> Option<SentimentAnalysis> {
+        None
+    }
     /// Number of tool results in this message.
     async fn tool_result_count(&self) -> Option<i32> {
         if let Some(ref raw) = self.data.raw_json {
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
-                if let Some(content) = parsed.get("message").and_then(|m| m.get("content")).and_then(|c| c.as_array()) {
+                if let Some(content) = parsed
+                    .get("message")
+                    .and_then(|m| m.get("content"))
+                    .and_then(|c| c.as_array())
+                {
                     return Some(content.len() as i32);
                 }
             }
@@ -337,16 +431,32 @@ pub struct AssistantMessage {
 
 #[Object]
 impl AssistantMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
 
     /// Text content of the message.
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
 
     /// Parsed content blocks (text, thinking, tool_use, etc.).
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
@@ -374,7 +484,9 @@ impl AssistantMessage {
             self.data.raw_json.as_deref(),
             Some(&self.data.session_id),
         );
-        if blocks.is_empty() { return Some(false); }
+        if blocks.is_empty() {
+            return Some(false);
+        }
         Some(blocks.iter().all(|b| matches!(b, ContentBlock::ToolUse(_))))
     }
 
@@ -385,7 +497,11 @@ impl AssistantMessage {
             self.data.raw_json.as_deref(),
             Some(&self.data.session_id),
         );
-        Some(blocks.iter().any(|b| matches!(b, ContentBlock::Thinking(_))))
+        Some(
+            blocks
+                .iter()
+                .any(|b| matches!(b, ContentBlock::Thinking(_))),
+        )
     }
 
     /// Count of thinking blocks.
@@ -395,7 +511,12 @@ impl AssistantMessage {
             self.data.raw_json.as_deref(),
             Some(&self.data.session_id),
         );
-        Some(blocks.iter().filter(|b| matches!(b, ContentBlock::Thinking(_))).count() as i32)
+        Some(
+            blocks
+                .iter()
+                .filter(|b| matches!(b, ContentBlock::Thinking(_)))
+                .count() as i32,
+        )
     }
 
     /// Whether this message contains tool use blocks.
@@ -415,7 +536,12 @@ impl AssistantMessage {
             self.data.raw_json.as_deref(),
             Some(&self.data.session_id),
         );
-        Some(blocks.iter().filter(|b| matches!(b, ContentBlock::ToolUse(_))).count() as i32)
+        Some(
+            blocks
+                .iter()
+                .filter(|b| matches!(b, ContentBlock::ToolUse(_)))
+                .count() as i32,
+        )
     }
 
     /// Input tokens used.
@@ -430,8 +556,14 @@ impl AssistantMessage {
 
     /// Cached tokens.
     async fn cached_tokens(&self) -> Option<i64> {
-        parse_json_field_i64(&self.data.raw_json, &["usage", "cache_read_input_tokens"])
-            .or_else(|| parse_json_field_i64(&self.data.raw_json, &["usage", "cache_creation_input_tokens"]))
+        parse_json_field_i64(&self.data.raw_json, &["usage", "cache_read_input_tokens"]).or_else(
+            || {
+                parse_json_field_i64(
+                    &self.data.raw_json,
+                    &["usage", "cache_creation_input_tokens"],
+                )
+            },
+        )
     }
 }
 
@@ -447,15 +579,31 @@ pub struct SummaryMessage {
 
 #[Object]
 impl SummaryMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
     /// The summary text content.
-    async fn content(&self) -> Option<String> { self.data.content.clone() }
+    async fn content(&self) -> Option<String> {
+        self.data.content.clone()
+    }
     /// Parsed content blocks.
     async fn content_blocks(&self) -> Option<Vec<ContentBlock>> {
         Some(parse_content_blocks(
@@ -465,7 +613,9 @@ impl SummaryMessage {
         ))
     }
     /// Whether this is a context compaction summary.
-    async fn is_compact_summary(&self) -> Option<bool> { Some(false) }
+    async fn is_compact_summary(&self) -> Option<bool> {
+        Some(false)
+    }
 }
 
 /// A system message.
@@ -476,21 +626,43 @@ pub struct SystemMessage {
 
 #[Object]
 impl SystemMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
     /// System message text content.
-    async fn content(&self) -> Option<String> { self.data.content_text() }
+    async fn content(&self) -> Option<String> {
+        self.data.content_text()
+    }
     /// Whether this is a meta message.
-    async fn is_meta(&self) -> Option<bool> { Some(false) }
+    async fn is_meta(&self) -> Option<bool> {
+        Some(false)
+    }
     /// Message severity level.
-    async fn level(&self) -> Option<String> { None }
+    async fn level(&self) -> Option<String> {
+        None
+    }
     /// System message subtype.
-    async fn subtype(&self) -> Option<String> { None }
+    async fn subtype(&self) -> Option<String> {
+        None
+    }
 }
 
 // ============================================================================
@@ -505,17 +677,39 @@ pub struct FileHistorySnapshotMessage {
 
 #[Object]
 impl FileHistorySnapshotMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn message_id(&self) -> Option<&str> { Some(&self.data.id) }
-    async fn file_count(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "file_count") }
-    async fn is_snapshot_update(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "is_snapshot_update") }
-    async fn snapshot_timestamp(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "snapshot_timestamp") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn message_id(&self) -> Option<&str> {
+        Some(&self.data.id)
+    }
+    async fn file_count(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "file_count")
+    }
+    async fn is_snapshot_update(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "is_snapshot_update")
+    }
+    async fn snapshot_timestamp(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "snapshot_timestamp")
+    }
 }
 
 // ============================================================================
@@ -530,26 +724,56 @@ pub struct HookRunMessage {
 
 #[Object]
 impl HookRunMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn hook_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook") }
-    async fn hook(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn hook_type(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook_type") }
-    async fn directory(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "directory") }
-    async fn hook_run_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook_run_id").or_else(|| Some(self.data.id.clone())) }
-    async fn cached(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "cached") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn hook_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook")
+    }
+    async fn hook(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn hook_type(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook_type")
+    }
+    async fn directory(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "directory")
+    }
+    async fn hook_run_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook_run_id").or_else(|| Some(self.data.id.clone()))
+    }
+    async fn cached(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "cached")
+    }
     /// Hook result resolved inline via DataLoader (line adjacency + hook name matching).
     async fn result(&self, ctx: &Context<'_>) -> Result<Option<HookResult>> {
-        let hook_name = parse_data_field(&self.data.raw_json, "hook")
-            .unwrap_or_default();
+        let hook_name = parse_data_field(&self.data.raw_json, "hook").unwrap_or_default();
         // Composite key: "session_id:hook_name:line_number"
-        let key = format!("{}:{}:{}", self.data.session_id, hook_name, self.data.line_number);
+        let key = format!(
+            "{}:{}:{}",
+            self.data.session_id, hook_name, self.data.line_number
+        );
         let loader = ctx.data::<DataLoader<HookResultByRunIdLoader>>()?;
         let model = loader.load_one(key).await?;
         Ok(model.map(|m| HookResult::from_model(&m)))
@@ -592,162 +816,376 @@ pub struct HookResultMessage {
 
 #[Object]
 impl HookResultMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn hook(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook") }
-    async fn directory(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "directory") }
-    async fn hook_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn success(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "success") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
-    async fn exit_code(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "exit_code") }
-    async fn output(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "output") }
-    async fn error(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "error") }
-    async fn cached(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "cached") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn hook(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook")
+    }
+    async fn directory(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "directory")
+    }
+    async fn hook_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn success(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "success")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
+    async fn exit_code(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "exit_code")
+    }
+    async fn output(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "output")
+    }
+    async fn error(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "error")
+    }
+    async fn cached(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "cached")
+    }
 }
 
 /// Hook check state message.
 #[derive(Debug, Clone)]
-pub struct HookCheckStateMessage { pub data: MessageData }
+pub struct HookCheckStateMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookCheckStateMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn hook_type(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook_type") }
-    async fn hooks_count(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "hooks_count") }
-    async fn fingerprint(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "fingerprint") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn hook_type(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook_type")
+    }
+    async fn hooks_count(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "hooks_count")
+    }
+    async fn fingerprint(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "fingerprint")
+    }
 }
 
 /// Hook reference message.
 #[derive(Debug, Clone)]
-pub struct HookReferenceMessage { pub data: MessageData }
+pub struct HookReferenceMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookReferenceMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn file_path(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "file_path") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn reason(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "reason") }
-    async fn success(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "success") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn file_path(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "file_path")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn reason(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "reason")
+    }
+    async fn success(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "success")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
 }
 
 /// Hook validation message.
 #[derive(Debug, Clone)]
-pub struct HookValidationMessage { pub data: MessageData }
+pub struct HookValidationMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookValidationMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn hook(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn directory(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "directory") }
-    async fn success(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "success") }
-    async fn cached(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "cached") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
-    async fn exit_code(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "exit_code") }
-    async fn output(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "output") }
-    async fn error(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "error") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn hook(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn directory(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "directory")
+    }
+    async fn success(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "success")
+    }
+    async fn cached(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "cached")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
+    async fn exit_code(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "exit_code")
+    }
+    async fn output(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "output")
+    }
+    async fn error(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "error")
+    }
 }
 
 /// Hook script message.
 #[derive(Debug, Clone)]
-pub struct HookScriptMessage { pub data: MessageData }
+pub struct HookScriptMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookScriptMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn command(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "command") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn success(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "success") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
-    async fn exit_code(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "exit_code") }
-    async fn output(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "output") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn command(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "command")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn success(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "success")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
+    async fn exit_code(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "exit_code")
+    }
+    async fn output(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "output")
+    }
 }
 
 /// Hook datetime message.
 #[derive(Debug, Clone)]
-pub struct HookDatetimeMessage { pub data: MessageData }
+pub struct HookDatetimeMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookDatetimeMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn datetime(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "datetime") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn datetime(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "datetime")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
 }
 
 /// Hook file change message.
 #[derive(Debug, Clone)]
-pub struct HookFileChangeMessage { pub data: MessageData }
+pub struct HookFileChangeMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookFileChangeMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn file_path(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "file_path") }
-    async fn action(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "action") }
-    async fn change_tool_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "change_tool_name") }
-    async fn recorded_session_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "recorded_session_id") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn file_path(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "file_path")
+    }
+    async fn action(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "action")
+    }
+    async fn change_tool_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "change_tool_name")
+    }
+    async fn recorded_session_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "recorded_session_id")
+    }
 }
 
 /// Hook validation cache message.
 #[derive(Debug, Clone)]
-pub struct HookValidationCacheMessage { pub data: MessageData }
+pub struct HookValidationCacheMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl HookValidationCacheMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn hook(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "hook") }
-    async fn plugin(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "plugin") }
-    async fn directory(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "directory") }
-    async fn file_count(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "file_count") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn hook(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "hook")
+    }
+    async fn plugin(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "plugin")
+    }
+    async fn directory(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "directory")
+    }
+    async fn file_count(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "file_count")
+    }
 }
 
 // ============================================================================
@@ -756,19 +1194,39 @@ impl HookValidationCacheMessage {
 
 /// A queue operation message.
 #[derive(Debug, Clone)]
-pub struct QueueOperationMessage { pub data: MessageData }
+pub struct QueueOperationMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl QueueOperationMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn operation(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "operation") }
-    async fn queue_session_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "queue_session_id") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn operation(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "operation")
+    }
+    async fn queue_session_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "queue_session_id")
+    }
 }
 
 // ============================================================================
@@ -777,22 +1235,49 @@ impl QueueOperationMessage {
 
 /// An MCP tool call message.
 #[derive(Debug, Clone)]
-pub struct McpToolCallMessage { pub data: MessageData }
+pub struct McpToolCallMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl McpToolCallMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn tool(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "tool") }
-    async fn server(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "server_name").or_else(|| parse_data_field(&self.data.raw_json, "server")) }
-    async fn server_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "server_name") }
-    async fn call_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "call_id") }
-    async fn prefixed_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "prefixed_name") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn tool(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "tool")
+    }
+    async fn server(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "server_name")
+            .or_else(|| parse_data_field(&self.data.raw_json, "server"))
+    }
+    async fn server_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "server_name")
+    }
+    async fn call_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "call_id")
+    }
+    async fn prefixed_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "prefixed_name")
+    }
     async fn input(&self) -> Option<String> {
         if let Some(ref raw) = self.data.raw_json {
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
@@ -806,7 +1291,9 @@ impl McpToolCallMessage {
     /// Tool result resolved inline via DataLoader.
     async fn result(&self, ctx: &Context<'_>) -> Result<Option<McpToolResult>> {
         let call_id = parse_data_field(&self.data.raw_json, "call_id");
-        let Some(call_id) = call_id else { return Ok(None) };
+        let Some(call_id) = call_id else {
+            return Ok(None);
+        };
         let loader = ctx.data::<DataLoader<ToolResultByCallIdLoader>>()?;
         let model = loader.load_one(call_id).await?;
         Ok(model.map(|m| McpToolResult::from_model(&m)))
@@ -839,25 +1326,58 @@ impl McpToolResult {
 
 /// An MCP tool result message.
 #[derive(Debug, Clone)]
-pub struct McpToolResultMessage { pub data: MessageData }
+pub struct McpToolResultMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl McpToolResultMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn tool(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "tool") }
-    async fn server(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "server_name").or_else(|| parse_data_field(&self.data.raw_json, "server")) }
-    async fn prefixed_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "prefixed_name") }
-    async fn call_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "call_id") }
-    async fn success(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "success") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
-    async fn output(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "output") }
-    async fn error(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "error") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn tool(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "tool")
+    }
+    async fn server(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "server_name")
+            .or_else(|| parse_data_field(&self.data.raw_json, "server"))
+    }
+    async fn prefixed_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "prefixed_name")
+    }
+    async fn call_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "call_id")
+    }
+    async fn success(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "success")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
+    async fn output(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "output")
+    }
+    async fn error(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "error")
+    }
 }
 
 // ============================================================================
@@ -866,21 +1386,45 @@ impl McpToolResultMessage {
 
 /// An exposed tool call message.
 #[derive(Debug, Clone)]
-pub struct ExposedToolCallMessage { pub data: MessageData }
+pub struct ExposedToolCallMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl ExposedToolCallMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn tool(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "tool") }
-    async fn server(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "server") }
-    async fn call_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "call_id") }
-    async fn prefixed_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "prefixed_name") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn tool(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "tool")
+    }
+    async fn server(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "server")
+    }
+    async fn call_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "call_id")
+    }
+    async fn prefixed_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "prefixed_name")
+    }
     async fn input(&self) -> Option<String> {
         if let Some(ref raw) = self.data.raw_json {
             if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
@@ -894,7 +1438,9 @@ impl ExposedToolCallMessage {
     /// Tool result resolved inline via DataLoader.
     async fn result(&self, ctx: &Context<'_>) -> Result<Option<ExposedToolResult>> {
         let call_id = parse_data_field(&self.data.raw_json, "call_id");
-        let Some(call_id) = call_id else { return Ok(None) };
+        let Some(call_id) = call_id else {
+            return Ok(None);
+        };
         let loader = ctx.data::<DataLoader<ToolResultByCallIdLoader>>()?;
         let model = loader.load_one(call_id).await?;
         Ok(model.map(|m| ExposedToolResult::from_model(&m)))
@@ -927,24 +1473,54 @@ impl ExposedToolResult {
 
 /// An exposed tool result message.
 #[derive(Debug, Clone)]
-pub struct ExposedToolResultMessage { pub data: MessageData }
+pub struct ExposedToolResultMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl ExposedToolResultMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn tool(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "tool") }
-    async fn prefixed_name(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "prefixed_name") }
-    async fn call_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "call_id") }
-    async fn success(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "success") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
-    async fn output(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "output") }
-    async fn error(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "error") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn tool(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "tool")
+    }
+    async fn prefixed_name(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "prefixed_name")
+    }
+    async fn call_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "call_id")
+    }
+    async fn success(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "success")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
+    async fn output(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "output")
+    }
+    async fn error(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "error")
+    }
 }
 
 // ============================================================================
@@ -953,45 +1529,101 @@ impl ExposedToolResultMessage {
 
 /// A memory query message.
 #[derive(Debug, Clone)]
-pub struct MemoryQueryMessage { pub data: MessageData }
+pub struct MemoryQueryMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl MemoryQueryMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn question(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "question").or_else(|| parse_data_field(&self.data.raw_json, "query")) }
-    async fn route(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "route") }
-    async fn result_count(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "result_count") }
-    async fn duration_ms(&self) -> Option<i32> { parse_data_field_int(&self.data.raw_json, "duration_ms") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn question(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "question")
+            .or_else(|| parse_data_field(&self.data.raw_json, "query"))
+    }
+    async fn route(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "route")
+    }
+    async fn result_count(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "result_count")
+    }
+    async fn duration_ms(&self) -> Option<i32> {
+        parse_data_field_int(&self.data.raw_json, "duration_ms")
+    }
 }
 
 /// A memory learn message.
 #[derive(Debug, Clone)]
-pub struct MemoryLearnMessage { pub data: MessageData }
+pub struct MemoryLearnMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl MemoryLearnMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn content(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "content") }
-    async fn scope(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "scope").or_else(|| parse_data_field(&self.data.raw_json, "domain")) }
-    async fn domain(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "domain").or_else(|| parse_data_field(&self.data.raw_json, "scope")) }
-    async fn append(&self) -> Option<bool> { parse_data_field_bool(&self.data.raw_json, "append") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn content(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "content")
+    }
+    async fn scope(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "scope")
+            .or_else(|| parse_data_field(&self.data.raw_json, "domain"))
+    }
+    async fn domain(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "domain")
+            .or_else(|| parse_data_field(&self.data.raw_json, "scope"))
+    }
+    async fn append(&self) -> Option<bool> {
+        parse_data_field_bool(&self.data.raw_json, "append")
+    }
     async fn paths(&self) -> Option<Vec<String>> {
         let raw = self.data.raw_json.as_ref()?;
         let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
         let paths = parsed.get("data")?.get("paths")?.as_array()?;
-        Some(paths.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+        Some(
+            paths
+                .iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect(),
+        )
     }
 }
 
@@ -1001,28 +1633,61 @@ impl MemoryLearnMessage {
 
 /// A sentiment analysis message.
 #[derive(Debug, Clone)]
-pub struct SentimentAnalysisMessage { pub data: MessageData }
+pub struct SentimentAnalysisMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl SentimentAnalysisMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
-    async fn analyzed_message_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "message_id") }
-    async fn message_id(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "message_id") }
-    async fn sentiment_score(&self) -> Option<f64> { parse_data_field_f64(&self.data.raw_json, "sentiment_score") }
-    async fn sentiment_level(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "sentiment_level") }
-    async fn frustration_score(&self) -> Option<f64> { parse_data_field_f64(&self.data.raw_json, "frustration_score") }
-    async fn frustration_level(&self) -> Option<String> { parse_data_field(&self.data.raw_json, "frustration_level") }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
+    async fn analyzed_message_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "message_id")
+    }
+    async fn message_id(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "message_id")
+    }
+    async fn sentiment_score(&self) -> Option<f64> {
+        parse_data_field_f64(&self.data.raw_json, "sentiment_score")
+    }
+    async fn sentiment_level(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "sentiment_level")
+    }
+    async fn frustration_score(&self) -> Option<f64> {
+        parse_data_field_f64(&self.data.raw_json, "frustration_score")
+    }
+    async fn frustration_level(&self) -> Option<String> {
+        parse_data_field(&self.data.raw_json, "frustration_level")
+    }
     async fn signals(&self) -> Option<Vec<String>> {
         let raw = self.data.raw_json.as_ref()?;
         let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
         let signals = parsed.get("data")?.get("signals")?.as_array()?;
-        Some(signals.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+        Some(
+            signals
+                .iter()
+                .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                .collect(),
+        )
     }
 }
 
@@ -1032,17 +1697,33 @@ impl SentimentAnalysisMessage {
 
 /// An unknown/unrecognized event message.
 #[derive(Debug, Clone)]
-pub struct UnknownEventMessage { pub data: MessageData }
+pub struct UnknownEventMessage {
+    pub data: MessageData,
+}
 
 #[Object]
 impl UnknownEventMessage {
-    async fn id(&self) -> ID { self.data.global_id() }
-    async fn uuid(&self) -> &str { &self.data.id }
-    async fn timestamp(&self) -> &str { &self.data.timestamp }
-    async fn raw_json(&self) -> Option<&str> { self.data.raw_json.as_deref() }
-    async fn agent_id(&self) -> Option<&str> { self.data.agent_id.as_deref() }
-    async fn parent_id(&self) -> Option<&str> { self.data.parent_id.as_deref() }
-    async fn search_text(&self) -> Option<String> { self.data.search_text() }
+    async fn id(&self) -> ID {
+        self.data.global_id()
+    }
+    async fn uuid(&self) -> &str {
+        &self.data.id
+    }
+    async fn timestamp(&self) -> &str {
+        &self.data.timestamp
+    }
+    async fn raw_json(&self) -> Option<&str> {
+        self.data.raw_json.as_deref()
+    }
+    async fn agent_id(&self) -> Option<&str> {
+        self.data.agent_id.as_deref()
+    }
+    async fn parent_id(&self) -> Option<&str> {
+        self.data.parent_id.as_deref()
+    }
+    async fn search_text(&self) -> Option<String> {
+        self.data.search_text()
+    }
     /// The unrecognized event type.
     async fn event_type(&self) -> Option<&str> {
         self.data.tool_name.as_deref()
@@ -1108,7 +1789,9 @@ pub fn discriminate_message(data: MessageData) -> Message {
         "assistant" => Message::Assistant(AssistantMessage { data }),
         "summary" => Message::Summary(SummaryMessage { data }),
         "system" => Message::System(SystemMessage { data }),
-        "file-history-snapshot" => Message::FileHistorySnapshot(FileHistorySnapshotMessage { data }),
+        "file-history-snapshot" => {
+            Message::FileHistorySnapshot(FileHistorySnapshotMessage { data })
+        }
         "hook_run" => Message::HookRun(HookRunMessage { data }),
         "hook_result" => Message::HookResult(HookResultMessage { data }),
         "queue-operation" => Message::QueueOperation(QueueOperationMessage { data }),
@@ -1127,19 +1810,22 @@ fn discriminate_han_event(data: MessageData) -> Message {
         Some("hook_script") => Message::HookScript(HookScriptMessage { data }),
         Some("hook_datetime") => Message::HookDatetime(HookDatetimeMessage { data }),
         Some("hook_file_change") => Message::HookFileChange(HookFileChangeMessage { data }),
-        Some("hook_validation_cache") => Message::HookValidationCache(HookValidationCacheMessage { data }),
+        Some("hook_validation_cache") => {
+            Message::HookValidationCache(HookValidationCacheMessage { data })
+        }
         Some("queue_operation") => Message::QueueOperation(QueueOperationMessage { data }),
         Some("mcp_tool_call") => Message::McpToolCall(McpToolCallMessage { data }),
         Some("mcp_tool_result") => Message::McpToolResult(McpToolResultMessage { data }),
         Some("exposed_tool_call") => Message::ExposedToolCall(ExposedToolCallMessage { data }),
-        Some("exposed_tool_result") => Message::ExposedToolResult(ExposedToolResultMessage { data }),
+        Some("exposed_tool_result") => {
+            Message::ExposedToolResult(ExposedToolResultMessage { data })
+        }
         Some("memory_query") => Message::MemoryQuery(MemoryQueryMessage { data }),
         Some("memory_learn") => Message::MemoryLearn(MemoryLearnMessage { data }),
         Some("sentiment_analysis") => Message::SentimentAnalysis(SentimentAnalysisMessage { data }),
         _ => Message::UnknownEvent(UnknownEventMessage { data }),
     }
 }
-
 
 // ============================================================================
 // Helpers
@@ -1159,16 +1845,27 @@ fn parse_user_metadata(raw_json: &Option<String>) -> UserMetadata {
     };
     if let Some(ref raw) = raw_json {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
-            meta.is_command = parsed.get("isCommand").and_then(|v| v.as_bool()).unwrap_or(false);
-            meta.is_interrupt = parsed.get("isInterrupt").and_then(|v| v.as_bool()).unwrap_or(false);
-            meta.is_meta = parsed.get("isMeta").and_then(|v| v.as_bool()).unwrap_or(false);
+            meta.is_command = parsed
+                .get("isCommand")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            meta.is_interrupt = parsed
+                .get("isInterrupt")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            meta.is_meta = parsed
+                .get("isMeta")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
         }
     }
     meta
 }
 
 fn is_summary_message(data: &MessageData) -> bool {
-    if data.message_type != "user" { return false; }
+    if data.message_type != "user" {
+        return false;
+    }
     if let Some(ref content) = data.content {
         if content.contains("This session is being continued from a previous conversation") {
             return true;
@@ -1176,7 +1873,11 @@ fn is_summary_message(data: &MessageData) -> bool {
     }
     if let Some(ref raw) = data.raw_json {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
-            if parsed.get("isMeta").and_then(|v| v.as_bool()).unwrap_or(false) {
+            if parsed
+                .get("isMeta")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+            {
                 if let Some(ref content) = data.content {
                     if content.contains("Summary:") {
                         return true;
@@ -1189,11 +1890,21 @@ fn is_summary_message(data: &MessageData) -> bool {
 }
 
 fn is_tool_result_user_message(data: &MessageData) -> bool {
-    if data.message_type != "user" { return false; }
+    if data.message_type != "user" {
+        return false;
+    }
     if let Some(ref raw) = data.raw_json {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
-            if let Some(content) = parsed.get("message").and_then(|m| m.get("content")).and_then(|c| c.as_array()) {
-                if !content.is_empty() && content.iter().all(|b| b.get("type").and_then(|t| t.as_str()) == Some("tool_result")) {
+            if let Some(content) = parsed
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                if !content.is_empty()
+                    && content
+                        .iter()
+                        .all(|b| b.get("type").and_then(|t| t.as_str()) == Some("tool_result"))
+                {
                     return true;
                 }
             }
@@ -1203,11 +1914,21 @@ fn is_tool_result_user_message(data: &MessageData) -> bool {
 }
 
 fn is_tool_result_user_model(msg: &messages::Model) -> bool {
-    if msg.message_type != "user" { return false; }
+    if msg.message_type != "user" {
+        return false;
+    }
     if let Some(ref raw) = msg.raw_json {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(raw) {
-            if let Some(content) = parsed.get("message").and_then(|m| m.get("content")).and_then(|c| c.as_array()) {
-                if !content.is_empty() && content.iter().all(|b| b.get("type").and_then(|t| t.as_str()) == Some("tool_result")) {
+            if let Some(content) = parsed
+                .get("message")
+                .and_then(|m| m.get("content"))
+                .and_then(|c| c.as_array())
+            {
+                if !content.is_empty()
+                    && content
+                        .iter()
+                        .all(|b| b.get("type").and_then(|t| t.as_str()) == Some("tool_result"))
+                {
                     return true;
                 }
             }
@@ -1219,7 +1940,10 @@ fn is_tool_result_user_model(msg: &messages::Model) -> bool {
 fn parse_user_metadata_field(raw_json: &Option<String>, field: &str) -> Option<String> {
     let raw = raw_json.as_ref()?;
     let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
-    parsed.get(field).and_then(|v| v.as_str()).map(|s| s.to_string())
+    parsed
+        .get(field)
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
 }
 
 fn parse_json_field(raw_json: &Option<String>, path: &[&str]) -> Option<String> {
@@ -1243,25 +1967,39 @@ fn parse_json_field_i64(raw_json: &Option<String>, path: &[&str]) -> Option<i64>
 fn parse_data_field(raw_json: &Option<String>, field: &str) -> Option<String> {
     let raw = raw_json.as_ref()?;
     let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
-    parsed.get("data").and_then(|d| d.get(field)).and_then(|v| v.as_str()).map(|s| s.to_string())
+    parsed
+        .get("data")
+        .and_then(|d| d.get(field))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
 }
 
 fn parse_data_field_bool(raw_json: &Option<String>, field: &str) -> Option<bool> {
     let raw = raw_json.as_ref()?;
     let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
-    parsed.get("data").and_then(|d| d.get(field)).and_then(|v| v.as_bool())
+    parsed
+        .get("data")
+        .and_then(|d| d.get(field))
+        .and_then(|v| v.as_bool())
 }
 
 fn parse_data_field_int(raw_json: &Option<String>, field: &str) -> Option<i32> {
     let raw = raw_json.as_ref()?;
     let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
-    parsed.get("data").and_then(|d| d.get(field)).and_then(|v| v.as_i64()).map(|v| v as i32)
+    parsed
+        .get("data")
+        .and_then(|d| d.get(field))
+        .and_then(|v| v.as_i64())
+        .map(|v| v as i32)
 }
 
 fn parse_data_field_f64(raw_json: &Option<String>, field: &str) -> Option<f64> {
     let raw = raw_json.as_ref()?;
     let parsed: serde_json::Value = serde_json::from_str(raw).ok()?;
-    parsed.get("data").and_then(|d| d.get(field)).and_then(|v| v.as_f64())
+    parsed
+        .get("data")
+        .and_then(|d| d.get(field))
+        .and_then(|v| v.as_f64())
 }
 
 // -- Auto-generated filters via EntityFilter derive --
@@ -1270,7 +2008,7 @@ fn parse_data_field_f64(raw_json: &Option<String>, field: &str) -> Option<f64> {
 #[derive(han_graphql_derive::EntityFilter)]
 #[entity_filter(
     entity = "han_db::entities::messages::Entity",
-    columns = "han_db::entities::messages::Column",
+    columns = "han_db::entities::messages::Column"
 )]
 struct MessageFilterSource {
     id: String,
@@ -1324,7 +2062,11 @@ mod tests {
         }
     }
 
-    fn make_model(message_type: &str, tool_name: Option<&str>, raw_json: Option<&str>) -> messages::Model {
+    fn make_model(
+        message_type: &str,
+        tool_name: Option<&str>,
+        raw_json: Option<&str>,
+    ) -> messages::Model {
         messages::Model {
             id: "test-uuid".into(),
             session_id: "session-1".into(),
@@ -1359,7 +2101,10 @@ mod tests {
     #[test]
     fn test_discriminate_regular_user() {
         let data = make_data("user", None);
-        assert!(matches!(discriminate_message(data), Message::RegularUser(_)));
+        assert!(matches!(
+            discriminate_message(data),
+            Message::RegularUser(_)
+        ));
     }
 
     #[test]
@@ -1389,13 +2134,19 @@ mod tests {
     #[test]
     fn test_discriminate_han_event_mcp_tool_call() {
         let data = make_data("han_event", Some("mcp_tool_call"));
-        assert!(matches!(discriminate_message(data), Message::McpToolCall(_)));
+        assert!(matches!(
+            discriminate_message(data),
+            Message::McpToolCall(_)
+        ));
     }
 
     #[test]
     fn test_discriminate_unknown() {
         let data = make_data("some_future_type", None);
-        assert!(matches!(discriminate_message(data), Message::UnknownEvent(_)));
+        assert!(matches!(
+            discriminate_message(data),
+            Message::UnknownEvent(_)
+        ));
     }
 
     #[test]
@@ -1542,13 +2293,20 @@ pub fn build_message_connection(
         .collect();
 
     let start_idx = if let Some(ref after_cursor) = after {
-        all_edges.iter().position(|e| e.cursor == *after_cursor).map(|i| i + 1).unwrap_or(0)
+        all_edges
+            .iter()
+            .position(|e| e.cursor == *after_cursor)
+            .map(|i| i + 1)
+            .unwrap_or(0)
     } else {
         0
     };
 
     let end_idx = if let Some(ref before_cursor) = before {
-        all_edges.iter().position(|e| e.cursor == *before_cursor).unwrap_or(all_edges.len())
+        all_edges
+            .iter()
+            .position(|e| e.cursor == *before_cursor)
+            .unwrap_or(all_edges.len())
     } else {
         all_edges.len()
     };
