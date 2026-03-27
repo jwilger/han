@@ -49,6 +49,17 @@ Mental checklist for skill selection:
 - skill-name (reason)"
 ```
 
+## The 1% Rule
+
+If there is even a 1% chance that a skill applies to the current task, you MUST invoke it using the Skill tool.
+
+Skills exist to prevent known failure modes. Skipping a relevant skill because "it probably doesn't apply" is exactly how failures happen. The cost of invoking an unnecessary skill (~100 tokens) is trivial compared to the cost of missing a failure mode it would have caught.
+
+**Before starting any task:**
+1. Scan all available skills
+2. For each, ask: "Could this help?"
+3. If the answer is anything other than "definitely not," invoke it
+
 ## Key Points
 
 - Skill descriptions are source of truth
