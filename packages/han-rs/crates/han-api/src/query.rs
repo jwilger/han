@@ -7,9 +7,10 @@ use std::sync::Mutex;
 use std::time::Instant;
 
 use async_graphql::*;
+use chrono::Datelike;
 use sea_orm::{
-    ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, FromQueryResult,
-    PaginatorTrait, QueryOrder, QuerySelect, ColumnTrait, QueryFilter, Statement,
+    ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, FromQueryResult,
+    PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Statement,
 };
 
 // TTL cache for expensive dashboard analytics queries.
@@ -23,18 +24,17 @@ use han_db::entities::{config_dirs, hook_executions, native_tasks, projects, rep
 use crate::node::decode_global_id;
 use crate::types::config_dir::ConfigDir;
 use crate::types::dashboard::{
-    ActivityData, CostAnalysis, CoordinatorStatus, DailyActivity, DailyCost,
-    DailyModelTokens, DashboardAnalytics, HookHealthStats, HourlyActivity,
-    ModelTokenEntry, ModelUsageStats, SessionCost, StatsCache, TokenUsageStats,
-    ToolUsageStats, WeeklyCost, estimate_cost_for_model, estimate_cost_usd,
-    model_display_name,
+    estimate_cost_for_model, estimate_cost_usd, model_display_name, ActivityData,
+    CoordinatorStatus, CostAnalysis, DailyActivity, DailyCost, DailyModelTokens,
+    DashboardAnalytics, HookHealthStats, HourlyActivity, ModelTokenEntry, ModelUsageStats,
+    SessionCost, SessionPerformancePoint, StatsCache, TokenUsageStats, ToolUsageStats, WeeklyCost,
 };
 use crate::types::enums::MetricsPeriod;
-use crate::types::metrics::{MetricsData, TaskTypeCount, TaskOutcomeCount};
+use crate::types::metrics::{MetricsData, TaskOutcomeCount, TaskTypeCount};
 use crate::types::plugin::{Plugin, PluginCategory, PluginStats};
 use crate::types::project::Project;
 use crate::types::repo::Repo;
-use crate::types::sessions::{SessionConnection, SessionData, build_session_connection};
+use crate::types::sessions::{build_session_connection, SessionConnection, SessionData};
 
 // ============================================================================
 // Raw query result types for enrichment
@@ -187,7 +187,10 @@ pub async fn enrich_sessions(db: &DatabaseConnection, sessions: &mut [SessionDat
 }
 
 /// Enrich a single session with project info, message stats, and summary.
-pub async fn enrich_single_session(db: &DatabaseConnection, session: &mut SessionData) -> Result<()> {
+pub async fn enrich_single_session(
+    db: &DatabaseConnection,
+    session: &mut SessionData,
+) -> Result<()> {
     enrich_sessions(db, std::slice::from_mut(session)).await
 }
 
@@ -226,9 +229,7 @@ fn session_scope_filter(
         let raw = strip_global_id_prefix(pid);
         if !raw.is_empty() {
             return Some((
-                format!(
-                    "{col} IN (SELECT ss.id FROM sessions ss WHERE ss.project_id = ?)"
-                ),
+                format!("{col} IN (SELECT ss.id FROM sessions ss WHERE ss.project_id = ?)"),
                 raw.to_string().into(),
             ));
         }
@@ -275,42 +276,67 @@ impl QueryRoot {
                     Some(m) => {
                         let mut sessions = vec![session_model_to_data(m)];
                         enrich_sessions(db, &mut sessions).await?;
-                        Ok(sessions.into_iter().next().map(crate::types::node::Node::Session))
+                        Ok(sessions
+                            .into_iter()
+                            .next()
+                            .map(crate::types::node::Node::Session))
                     }
                     None => Ok(None),
                 }
             }
             "Repo" => {
-                let model = repos::Entity::find_by_id(&raw_id).one(db).await
+                let model = repos::Entity::find_by_id(&raw_id)
+                    .one(db)
+                    .await
                     .map_err(|e| Error::new(e.to_string()))?;
                 Ok(model.map(|m| crate::types::node::Node::Repo(Repo::from(m))))
             }
             "Project" => {
-                let model = projects::Entity::find_by_id(&raw_id).one(db).await
+                let model = projects::Entity::find_by_id(&raw_id)
+                    .one(db)
+                    .await
                     .map_err(|e| Error::new(e.to_string()))?;
                 Ok(model.map(|m| crate::types::node::Node::Project(Project::from(m))))
             }
             "ConfigDir" => {
-                let model = config_dirs::Entity::find_by_id(&raw_id).one(db).await
+                let model = config_dirs::Entity::find_by_id(&raw_id)
+                    .one(db)
+                    .await
                     .map_err(|e| Error::new(e.to_string()))?;
                 Ok(model.map(|m| crate::types::node::Node::ConfigDir(ConfigDir::from(m))))
             }
             "NativeTask" => {
-                let model = native_tasks::Entity::find_by_id(&raw_id).one(db).await
+                let model = native_tasks::Entity::find_by_id(&raw_id)
+                    .one(db)
+                    .await
                     .map_err(|e| Error::new(e.to_string()))?;
-                Ok(model.map(|m| crate::types::node::Node::NativeTask(crate::types::native_task::NativeTask::from(m))))
+                Ok(model.map(|m| {
+                    crate::types::node::Node::NativeTask(
+                        crate::types::native_task::NativeTask::from(m),
+                    )
+                }))
             }
             "HookExecution" => {
-                let model = hook_executions::Entity::find_by_id(&raw_id).one(db).await
+                let model = hook_executions::Entity::find_by_id(&raw_id)
+                    .one(db)
+                    .await
                     .map_err(|e| Error::new(e.to_string()))?;
-                Ok(model.map(|m| crate::types::node::Node::HookExecution(crate::types::hook_execution::HookExecution::from(m))))
+                Ok(model.map(|m| {
+                    crate::types::node::Node::HookExecution(
+                        crate::types::hook_execution::HookExecution::from(m),
+                    )
+                }))
             }
-            _ => Ok(None)
+            _ => Ok(None),
         }
     }
 
     /// Fetch a single message by its UUID.
-    async fn message(&self, ctx: &Context<'_>, id: String) -> Result<Option<crate::types::messages::Message>> {
+    async fn message(
+        &self,
+        ctx: &Context<'_>,
+        id: String,
+    ) -> Result<Option<crate::types::messages::Message>> {
         let db = ctx.data::<DatabaseConnection>()?;
         let msg_model = han_db::crud::messages::get(db, &id)
             .await
@@ -378,7 +404,11 @@ impl QueryRoot {
             query = query.order_by_desc(projects::Column::UpdatedAt);
         }
         let models = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
-        Ok(models.into_iter().take(limit as usize).map(Project::from).collect())
+        Ok(models
+            .into_iter()
+            .take(limit as usize)
+            .map(Project::from)
+            .collect())
     }
 
     /// Get a project by ID.
@@ -411,7 +441,11 @@ impl QueryRoot {
             query = query.order_by_desc(repos::Column::UpdatedAt);
         }
         let models = query.all(db).await.map_err(|e| Error::new(e.to_string()))?;
-        Ok(models.into_iter().take(limit as usize).map(Repo::from).collect())
+        Ok(models
+            .into_iter()
+            .take(limit as usize)
+            .map(Repo::from)
+            .collect())
     }
 
     /// Get a repo by its repoId.
@@ -514,8 +548,8 @@ impl QueryRoot {
                     last_ts: Option<String>,
                 }
 
-                let activities = SessionActivity::find_by_statement(
-                    Statement::from_sql_and_values(
+                let activities =
+                    SessionActivity::find_by_statement(Statement::from_sql_and_values(
                         DbBackend::Sqlite,
                         format!(
                             "SELECT session_id, MAX(timestamp) as last_ts \
@@ -523,11 +557,10 @@ impl QueryRoot {
                              GROUP BY session_id"
                         ),
                         values,
-                    ),
-                )
-                .all(db)
-                .await
-                .map_err(|e| Error::new(e.to_string()))?;
+                    ))
+                    .all(db)
+                    .await
+                    .map_err(|e| Error::new(e.to_string()))?;
 
                 let activity_map: HashMap<String, String> = activities
                     .into_iter()
@@ -538,10 +571,7 @@ impl QueryRoot {
                 let mut model_with_ts: Vec<(sessions::Model, String)> = models
                     .into_iter()
                     .map(|m| {
-                        let ts = activity_map
-                            .get(&m.id)
-                            .cloned()
-                            .unwrap_or_default();
+                        let ts = activity_map.get(&m.id).cloned().unwrap_or_default();
                         (m, ts)
                     })
                     .collect();
@@ -608,7 +638,11 @@ impl QueryRoot {
         let db = ctx.data::<DatabaseConnection>()?;
         let scope = session_scope_filter("session_id", &project_id, &repo_id);
 
-        let (total_sessions, total_tasks, total_tokens, cost) = if let Some((ref scope_clause, ref scope_val)) = scope {
+        let (total_sessions, total_tasks, total_tokens, cost) = if let Some((
+            ref scope_clause,
+            ref scope_val,
+        )) = scope
+        {
             // Scoped: count sessions from sessions table (complete data),
             // token totals from messages table (indexed data).
             let sess_scope = session_scope_filter("s.id", &project_id, &repo_id);
@@ -643,7 +677,9 @@ impl QueryRoot {
             let task_row = db
                 .query_one(Statement::from_sql_and_values(
                     DbBackend::Sqlite,
-                    format!("SELECT COUNT(*) as total_tasks FROM native_tasks WHERE {scope_clause}"),
+                    format!(
+                        "SELECT COUNT(*) as total_tasks FROM native_tasks WHERE {scope_clause}"
+                    ),
                     vec![scope_val.clone()],
                 ))
                 .await
@@ -654,7 +690,12 @@ impl QueryRoot {
                 .unwrap_or(0);
 
             let tok = inp + out + cache;
-            (sess as i32, tasks as i32, tok, estimate_cost_usd(inp, out, cache))
+            (
+                sess as i32,
+                tasks as i32,
+                tok,
+                estimate_cost_usd(inp, out, cache),
+            )
         } else {
             // Unscoped: use pre-aggregated global_aggregates (instant vs scanning 1M+ messages)
             let row = db
@@ -782,7 +823,11 @@ impl QueryRoot {
             let completed: i64 = r.try_get("", "completed").unwrap_or(0);
             let in_prog: i64 = r.try_get("", "in_prog").unwrap_or(0);
             let pending: i64 = r.try_get("", "pending").unwrap_or(0);
-            let sr = if total > 0 { completed as f64 / total as f64 } else { 0.0 };
+            let sr = if total > 0 {
+                completed as f64 / total as f64
+            } else {
+                0.0
+            };
             crate::types::team::TaskCompletionMetrics {
                 total_tasks: Some(total as i32),
                 total_created: Some(total as i32),
@@ -901,9 +946,12 @@ impl QueryRoot {
         };
 
         // Sentiment aggregation for agent health
-        let (sentiment_sql, sentiment_values): (String, Vec<sea_orm::Value>) =
-            if let Some((ref scope_clause, ref scope_val)) = scope {
-                (
+        let (sentiment_sql, sentiment_values): (String, Vec<sea_orm::Value>) = if let Some((
+            ref scope_clause,
+            ref scope_val,
+        )) = scope
+        {
+            (
                     format!(
                         "SELECT \
                          AVG(sentiment_score) as avg_sentiment, \
@@ -914,8 +962,8 @@ impl QueryRoot {
                     ),
                     vec![scope_val.clone()],
                 )
-            } else {
-                (
+        } else {
+            (
                     "SELECT \
                      AVG(sentiment_score) as avg_sentiment, \
                      COUNT(CASE WHEN frustration_level IN ('high', 'critical') THEN 1 END) as significant_frustrations, \
@@ -925,7 +973,7 @@ impl QueryRoot {
                         .to_string(),
                     vec![],
                 )
-            };
+        };
 
         let sentiment_row = db
             .query_one(Statement::from_sql_and_values(
@@ -1078,15 +1126,21 @@ impl QueryRoot {
     }
 
     /// Installed plugins, optionally filtered by scope.
-    async fn plugins(&self, _scope: Option<crate::types::enums::PluginScope>) -> Option<Vec<Plugin>> {
+    async fn plugins(
+        &self,
+        _scope: Option<crate::types::enums::PluginScope>,
+    ) -> Option<Vec<Plugin>> {
         Some(vec![])
     }
 
     /// Aggregate plugin statistics.
     async fn plugin_stats(&self) -> Option<PluginStats> {
         // Read installed_plugins.json from ~/.claude/plugins/
-        let plugins_path = dirs::home_dir()
-            .map(|h| h.join(".claude").join("plugins").join("installed_plugins.json"));
+        let plugins_path = dirs::home_dir().map(|h| {
+            h.join(".claude")
+                .join("plugins")
+                .join("installed_plugins.json")
+        });
 
         let (mut user, mut project, mut local, mut total_unique) = (0i32, 0i32, 0i32, 0i32);
 
@@ -1438,29 +1492,30 @@ impl QueryRoot {
             avg_duration_ms: f64,
         }
 
-        let (hook_sql, hook_values): (String, Vec<sea_orm::Value>) = if let Some((ref sc, ref sv)) = scope {
-            (
-                format!(
-                    "SELECT hook_name, COUNT(*) as total_runs, \
+        let (hook_sql, hook_values): (String, Vec<sea_orm::Value>) =
+            if let Some((ref sc, ref sv)) = scope {
+                (
+                    format!(
+                        "SELECT hook_name, COUNT(*) as total_runs, \
                      SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as pass_count, \
                      SUM(CASE WHEN passed = 0 THEN 1 ELSE 0 END) as fail_count, \
                      AVG(duration_ms) as avg_duration_ms \
                      FROM hook_executions WHERE {sc} \
                      GROUP BY hook_name ORDER BY total_runs DESC"
-                ),
-                vec![sv.clone()],
-            )
-        } else {
-            (
-                "SELECT hook_name, COUNT(*) as total_runs, \
+                    ),
+                    vec![sv.clone()],
+                )
+            } else {
+                (
+                    "SELECT hook_name, COUNT(*) as total_runs, \
                  SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as pass_count, \
                  SUM(CASE WHEN passed = 0 THEN 1 ELSE 0 END) as fail_count, \
                  AVG(duration_ms) as avg_duration_ms \
                  FROM hook_executions GROUP BY hook_name ORDER BY total_runs DESC"
-                    .to_string(),
-                vec![],
-            )
-        };
+                        .to_string(),
+                    vec![],
+                )
+            };
 
         let hook_rows = HookRow::find_by_statement(Statement::from_sql_and_values(
             DbBackend::Sqlite,
@@ -1502,7 +1557,11 @@ impl QueryRoot {
             continuation_count: i64,
         }
 
-        let (compact_sql, compact_values): (String, Vec<sea_orm::Value>) = if let Some((ref sc, ref sv)) = scope {
+        let (compact_sql, compact_values): (String, Vec<sea_orm::Value>) = if let Some((
+            ref sc,
+            ref sv,
+        )) = scope
+        {
             (
                 format!(
                     "SELECT \
@@ -1548,7 +1607,10 @@ impl QueryRoot {
             let id_scope = session_scope_filter("id", &project_id, &repo_id).unwrap();
             GlobalSessionCount::find_by_statement(Statement::from_sql_and_values(
                 DbBackend::Sqlite,
-                format!("SELECT COUNT(*) as total_sessions FROM sessions WHERE {}", id_scope.0),
+                format!(
+                    "SELECT COUNT(*) as total_sessions FROM sessions WHERE {}",
+                    id_scope.0
+                ),
                 vec![sv.clone()],
             ))
             .one(db)
@@ -1726,11 +1788,9 @@ impl QueryRoot {
             )
         };
 
-        let effectiveness_rows = EffectivenessRow::find_by_statement(Statement::from_sql_and_values(
-            DbBackend::Sqlite,
-            eff_sql,
-            eff_values,
-        ))
+        let effectiveness_rows = EffectivenessRow::find_by_statement(
+            Statement::from_sql_and_values(DbBackend::Sqlite, eff_sql, eff_values),
+        )
         .all(db)
         .await
         .unwrap_or_default();
@@ -1744,55 +1804,73 @@ impl QueryRoot {
             .max(1) as f64;
 
         // Score each session
-        let mut scored_sessions: Vec<(f64, crate::types::dashboard::SessionEffectiveness)> = effectiveness_rows
-            .into_iter()
-            .map(|r| {
-                let task_completion_rate = if r.total_tasks > 0 {
-                    r.completed_tasks as f64 / r.total_tasks as f64
-                } else {
-                    0.5 // neutral if no tasks
-                };
-                let compaction_penalty = (r.compaction_count as f64 / 3.0).min(1.0);
-                let sentiment_normalized = r.avg_sentiment.map(|s| (s + 1.0) / 2.0).unwrap_or(0.5);
-                let focus_score = 1.0 - (r.turn_count as f64 / max_turn_count);
+        let mut scored_sessions: Vec<(f64, crate::types::dashboard::SessionEffectiveness)> =
+            effectiveness_rows
+                .into_iter()
+                .map(|r| {
+                    let task_completion_rate = if r.total_tasks > 0 {
+                        r.completed_tasks as f64 / r.total_tasks as f64
+                    } else {
+                        0.5 // neutral if no tasks
+                    };
+                    let compaction_penalty = (r.compaction_count as f64 / 3.0).min(1.0);
+                    let sentiment_normalized =
+                        r.avg_sentiment.map(|s| (s + 1.0) / 2.0).unwrap_or(0.5);
+                    let focus_score = 1.0 - (r.turn_count as f64 / max_turn_count);
 
-                let score = task_completion_rate * 0.4
-                    + (1.0 - compaction_penalty) * 0.2
-                    + sentiment_normalized * 0.2
-                    + focus_score * 0.2;
+                    let score = task_completion_rate * 0.4
+                        + (1.0 - compaction_penalty) * 0.2
+                        + sentiment_normalized * 0.2
+                        + focus_score * 0.2;
 
-                let sentiment_trend = match r.avg_sentiment {
-                    Some(s) if s > 0.3 => "improving",
-                    Some(s) if s < -0.3 => "declining",
-                    _ => "neutral",
-                };
+                    let sentiment_trend = match r.avg_sentiment {
+                        Some(s) if s > 0.3 => "improving",
+                        Some(s) if s < -0.3 => "declining",
+                        _ => "neutral",
+                    };
 
-                let summary_truncated = r.summary.map(|s| {
-                    if s.len() > 120 { format!("{}...", &s[..120]) } else { s }
-                });
+                    let summary_truncated = r.summary.map(|s| {
+                        if s.len() > 120 {
+                            format!("{}...", &s[..120])
+                        } else {
+                            s
+                        }
+                    });
 
-                (score, crate::types::dashboard::SessionEffectiveness {
-                    session_id: Some(r.session_id),
-                    slug: r.slug,
-                    summary: summary_truncated,
-                    started_at: r.started_at,
-                    score: Some((score * 100.0).round()),
-                    sentiment_trend: Some(sentiment_trend.to_string()),
-                    avg_sentiment_score: r.avg_sentiment,
-                    turn_count: Some(r.turn_count as i32),
-                    task_completion_rate: Some(task_completion_rate),
-                    compaction_count: Some(r.compaction_count as i32),
-                    focus_score: Some(focus_score),
+                    (
+                        score,
+                        crate::types::dashboard::SessionEffectiveness {
+                            session_id: Some(r.session_id),
+                            slug: r.slug,
+                            summary: summary_truncated,
+                            started_at: r.started_at,
+                            score: Some((score * 100.0).round()),
+                            sentiment_trend: Some(sentiment_trend.to_string()),
+                            avg_sentiment_score: r.avg_sentiment,
+                            turn_count: Some(r.turn_count as i32),
+                            task_completion_rate: Some(task_completion_rate),
+                            compaction_count: Some(r.compaction_count as i32),
+                            focus_score: Some(focus_score),
+                        },
+                    )
                 })
-            })
-            .collect();
+                .collect();
 
         // Top 5 (highest score)
         scored_sessions.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
-        let top_sessions: Vec<_> = scored_sessions.iter().take(5).map(|(_, s)| s.clone()).collect();
+        let top_sessions: Vec<_> = scored_sessions
+            .iter()
+            .take(5)
+            .map(|(_, s)| s.clone())
+            .collect();
 
         // Bottom 5 (lowest score)
-        let bottom_sessions: Vec<_> = scored_sessions.iter().rev().take(5).map(|(_, s)| s.clone()).collect();
+        let bottom_sessions: Vec<_> = scored_sessions
+            .iter()
+            .rev()
+            .take(5)
+            .map(|(_, s)| s.clone())
+            .collect();
 
         // ====================================================================
         // Phase 4: Cost Analysis Improvements
@@ -1807,7 +1885,8 @@ impl QueryRoot {
         }
         let cost_agg = if let Some((ref _sc, ref sv)) = scope {
             // Scoped: compute from raw tables
-            let completed_scope = session_scope_filter("session_id", &project_id, &repo_id).unwrap();
+            let completed_scope =
+                session_scope_filter("session_id", &project_id, &repo_id).unwrap();
             let msg_scope = session_scope_filter("session_id", &project_id, &repo_id).unwrap();
 
             // Get completed tasks count
@@ -1832,7 +1911,8 @@ impl QueryRoot {
                          COALESCE(SUM(input_tokens), 0) as total_input_tokens, \
                          COALESCE(SUM(output_tokens), 0) as total_output_tokens, \
                          COALESCE(SUM(cache_read_tokens), 0) as total_cache_read_tokens \
-                         FROM messages WHERE {}", msg_scope.0
+                         FROM messages WHERE {}",
+                        msg_scope.0
                     ),
                     vec![sv.clone()],
                 ))
@@ -1909,9 +1989,9 @@ impl QueryRoot {
         };
 
         // Infer subscription from model usage
-        let has_opus = model_usage.iter().any(|m|
-            m.model.as_deref().unwrap_or("").contains("opus")
-        );
+        let has_opus = model_usage
+            .iter()
+            .any(|m| m.model.as_deref().unwrap_or("").contains("opus"));
         let (billing_type, max_subscription) = if has_opus {
             ("max_subscription".to_string(), 200.0)
         } else {
@@ -2008,7 +2088,8 @@ impl QueryRoot {
                 (sonnet_cost, true)
             };
 
-            let total_tokens = agg.total_input_tokens + agg.total_output_tokens + agg.total_cache_read_tokens;
+            let total_tokens =
+                agg.total_input_tokens + agg.total_output_tokens + agg.total_cache_read_tokens;
             let cache_hit_rate = if total_tokens > 0 {
                 agg.total_cache_read_tokens as f64 / total_tokens as f64
             } else {
@@ -2025,7 +2106,11 @@ impl QueryRoot {
                 .iter()
                 .map(|r| DailyCost {
                     date: Some(r.date.clone()),
-                    cost_usd: Some(estimate_cost_usd(r.input_tokens, r.output_tokens, r.cached_tokens)),
+                    cost_usd: Some(estimate_cost_usd(
+                        r.input_tokens,
+                        r.output_tokens,
+                        r.cached_tokens,
+                    )),
                     session_count: Some(r.session_count as i32),
                 })
                 .collect();
@@ -2085,6 +2170,83 @@ impl QueryRoot {
             }
         });
 
+        // ====================================================================
+        // Performance Trend: weekly aggregation from scored sessions
+        // ====================================================================
+        let performance_trend = {
+            let mut weekly: std::collections::BTreeMap<String, (f64, f64, f64, i32)> =
+                std::collections::BTreeMap::new();
+
+            for (score, session) in &scored_sessions {
+                if let Some(ref started_at) = session.started_at {
+                    if let Some(date_str) = started_at.split('T').next() {
+                        // Parse date and compute ISO week start (Monday)
+                        let parts: Vec<&str> = date_str.split('-').collect();
+                        if parts.len() == 3 {
+                            if let (Ok(y), Ok(m), Ok(d)) = (
+                                parts[0].parse::<i32>(),
+                                parts[1].parse::<u32>(),
+                                parts[2].parse::<u32>(),
+                            ) {
+                                if let Some(date) = chrono::NaiveDate::from_ymd_opt(y, m, d) {
+                                    let weekday = date.weekday().num_days_from_monday();
+                                    let monday = date - chrono::Duration::days(weekday as i64);
+                                    let week_key = monday.format("%Y-%m-%d").to_string();
+
+                                    let turn_count = session.turn_count.unwrap_or(0) as f64;
+                                    let compaction_count =
+                                        session.compaction_count.unwrap_or(0) as f64;
+
+                                    let entry =
+                                        weekly.entry(week_key).or_insert((0.0, 0.0, 0.0, 0));
+                                    entry.0 += turn_count;
+                                    entry.1 += compaction_count;
+                                    entry.2 += score;
+                                    entry.3 += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            weekly
+                .into_iter()
+                .map(|(week_start, (turns, compactions, scores, count))| {
+                    // Format week label like "Jan 6 - Jan 12"
+                    let label = if let Ok(start) =
+                        chrono::NaiveDate::parse_from_str(&week_start, "%Y-%m-%d")
+                    {
+                        let end = start + chrono::Duration::days(6);
+                        let start_month = start.format("%b").to_string();
+                        let end_month = end.format("%b").to_string();
+                        if start_month == end_month {
+                            format!("{} {} - {}", start_month, start.day(), end.day())
+                        } else {
+                            format!(
+                                "{} {} - {} {}",
+                                start_month,
+                                start.day(),
+                                end_month,
+                                end.day()
+                            )
+                        }
+                    } else {
+                        week_start.clone()
+                    };
+
+                    SessionPerformancePoint {
+                        week_start: Some(week_start),
+                        week_label: Some(label),
+                        session_count: Some(count),
+                        avg_turns: Some((turns / count as f64 * 10.0).round() / 10.0),
+                        avg_compactions: Some((compactions / count as f64 * 100.0).round() / 100.0),
+                        avg_effectiveness: Some((scores / count as f64 * 10.0).round() / 10.0),
+                    }
+                })
+                .collect::<Vec<_>>()
+        };
+
         let result = DashboardAnalytics {
             top_sessions: Some(top_sessions),
             bottom_sessions: Some(bottom_sessions),
@@ -2093,6 +2255,7 @@ impl QueryRoot {
             hook_health: Some(hook_health),
             subagent_usage: Some(subagent_usage),
             tool_usage: Some(tool_usage),
+            performance_trend: Some(performance_trend),
         };
 
         // Cache the result for 30 seconds
@@ -2107,8 +2270,7 @@ impl QueryRoot {
 
 /// Load per-model usage data from ~/.claude/stats-cache.json.
 fn load_stats_cache_model_data() -> (Vec<ModelUsageStats>, Vec<DailyModelTokens>) {
-    let stats_path = dirs::home_dir()
-        .map(|h| h.join(".claude").join("stats-cache.json"));
+    let stats_path = dirs::home_dir().map(|h| h.join(".claude").join("stats-cache.json"));
 
     let stats_path = match stats_path {
         Some(p) if p.exists() => p,
@@ -2136,7 +2298,8 @@ fn load_stats_cache_model_data() -> (Vec<ModelUsageStats>, Vec<DailyModelTokens>
             let cache_read = usage.cache_read_input_tokens.unwrap_or(0);
             let cache_creation = usage.cache_creation_input_tokens.unwrap_or(0);
             let total = input + output + cache_read + cache_creation;
-            let cost = estimate_cost_for_model(&model_id, input, output, cache_read, cache_creation);
+            let cost =
+                estimate_cost_for_model(&model_id, input, output, cache_read, cache_creation);
             ModelUsageStats {
                 display_name: Some(model_display_name(&model_id)),
                 model: Some(model_id),

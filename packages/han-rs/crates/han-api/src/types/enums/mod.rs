@@ -278,12 +278,16 @@ mod tests {
     #[test]
     fn task_type_all_variants_distinct() {
         let types = [
-            TaskType::Fix, TaskType::Implementation, TaskType::Refactor,
+            TaskType::Fix,
+            TaskType::Implementation,
+            TaskType::Refactor,
             TaskType::Research,
         ];
         for (i, a) in types.iter().enumerate() {
             for (j, b) in types.iter().enumerate() {
-                if i != j { assert_ne!(a, b); }
+                if i != j {
+                    assert_ne!(a, b);
+                }
             }
         }
     }
@@ -323,7 +327,9 @@ mod tests {
         ];
         for (i, a) in types.iter().enumerate() {
             for (j, b) in types.iter().enumerate() {
-                if i != j { assert_ne!(a, b); }
+                if i != j {
+                    assert_ne!(a, b);
+                }
             }
         }
     }

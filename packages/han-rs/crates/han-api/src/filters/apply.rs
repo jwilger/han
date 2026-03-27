@@ -168,8 +168,8 @@ impl<C: ColumnTrait> ApplyFilter<C> for BoolFilter {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::types::*;
+    use super::*;
 
     // We can't test the actual SQL generation without a database,
     // but we can test that filters convert without panicking.

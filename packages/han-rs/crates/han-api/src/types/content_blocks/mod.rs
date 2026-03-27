@@ -6,17 +6,15 @@
 //! ContentBlock is a GraphQL **interface** (not union) because the browse-client
 //! queries `type` as a shared field before using inline fragments on concrete types.
 
-use async_graphql::*;
 use async_graphql::dataloader::DataLoader;
+use async_graphql::*;
 
-use crate::loaders::ToolResultByParentIdLoader;
 use super::enums::{ContentBlockType, ToolCategory};
+use crate::loaders::ToolResultByParentIdLoader;
 
 /// Content block interface - shared `type` field across all block types.
 #[derive(Debug, Clone, Interface)]
-#[graphql(
-    field(name = "type", ty = "ContentBlockType", method = "block_type"),
-)]
+#[graphql(field(name = "type", ty = "ContentBlockType", method = "block_type"))]
 pub enum ContentBlock {
     Text(TextBlock),
     Thinking(ThinkingBlock),
@@ -35,8 +33,12 @@ pub struct TextBlock {
 #[Object]
 impl TextBlock {
     #[graphql(name = "type")]
-    async fn block_type(&self) -> ContentBlockType { self.block_type }
-    async fn text(&self) -> &str { &self.text }
+    async fn block_type(&self) -> ContentBlockType {
+        self.block_type
+    }
+    async fn text(&self) -> &str {
+        &self.text
+    }
 }
 
 /// A thinking/reasoning block.
@@ -51,10 +53,18 @@ pub struct ThinkingBlock {
 #[Object]
 impl ThinkingBlock {
     #[graphql(name = "type")]
-    async fn block_type(&self) -> ContentBlockType { self.block_type }
-    async fn thinking(&self) -> &str { &self.thinking }
-    async fn preview(&self) -> &str { &self.preview }
-    async fn signature(&self) -> Option<&str> { self.signature.as_deref() }
+    async fn block_type(&self) -> ContentBlockType {
+        self.block_type
+    }
+    async fn thinking(&self) -> &str {
+        &self.thinking
+    }
+    async fn preview(&self) -> &str {
+        &self.preview
+    }
+    async fn signature(&self) -> Option<&str> {
+        self.signature.as_deref()
+    }
 }
 
 /// A tool use block (Claude calling a tool).
@@ -75,16 +85,36 @@ pub struct ToolUseBlock {
 #[Object]
 impl ToolUseBlock {
     #[graphql(name = "type")]
-    async fn block_type(&self) -> ContentBlockType { self.block_type }
-    async fn tool_call_id(&self) -> &str { &self.tool_call_id }
-    async fn name(&self) -> &str { &self.name }
-    async fn input(&self) -> &str { &self.input }
-    async fn category(&self) -> ToolCategory { self.category }
-    async fn icon(&self) -> &str { &self.icon }
-    async fn display_name(&self) -> &str { &self.display_name }
-    async fn color(&self) -> &str { &self.color }
-    async fn session_id(&self) -> Option<&str> { self.session_id.as_deref() }
-    async fn agent_task_id(&self) -> Option<&str> { self.agent_task_id.as_deref() }
+    async fn block_type(&self) -> ContentBlockType {
+        self.block_type
+    }
+    async fn tool_call_id(&self) -> &str {
+        &self.tool_call_id
+    }
+    async fn name(&self) -> &str {
+        &self.name
+    }
+    async fn input(&self) -> &str {
+        &self.input
+    }
+    async fn category(&self) -> ToolCategory {
+        self.category
+    }
+    async fn icon(&self) -> &str {
+        &self.icon
+    }
+    async fn display_name(&self) -> &str {
+        &self.display_name
+    }
+    async fn color(&self) -> &str {
+        &self.color
+    }
+    async fn session_id(&self) -> Option<&str> {
+        self.session_id.as_deref()
+    }
+    async fn agent_task_id(&self) -> Option<&str> {
+        self.agent_task_id.as_deref()
+    }
 
     /// Tool result resolved inline via DataLoader.
     /// Looks up pre-indexed data from `tool_call_results` table — simple PK lookup.
@@ -111,7 +141,9 @@ impl ToolUseBlock {
     }
 
     /// Agent task reference (stub for backwards compatibility).
-    async fn agent_task(&self) -> Option<AgentTask> { None }
+    async fn agent_task(&self) -> Option<AgentTask> {
+        None
+    }
 }
 
 /// A tool result block (result from a tool call).
@@ -129,13 +161,27 @@ pub struct ToolResultBlock {
 #[Object]
 impl ToolResultBlock {
     #[graphql(name = "type")]
-    async fn block_type(&self) -> ContentBlockType { self.block_type }
-    async fn tool_call_id(&self) -> &str { &self.tool_call_id }
-    async fn content(&self) -> &str { &self.content }
-    async fn is_error(&self) -> bool { self.is_error }
-    async fn is_long(&self) -> bool { self.is_long }
-    async fn preview(&self) -> &str { &self.preview }
-    async fn has_image(&self) -> bool { self.has_image }
+    async fn block_type(&self) -> ContentBlockType {
+        self.block_type
+    }
+    async fn tool_call_id(&self) -> &str {
+        &self.tool_call_id
+    }
+    async fn content(&self) -> &str {
+        &self.content
+    }
+    async fn is_error(&self) -> bool {
+        self.is_error
+    }
+    async fn is_long(&self) -> bool {
+        self.is_long
+    }
+    async fn preview(&self) -> &str {
+        &self.preview
+    }
+    async fn has_image(&self) -> bool {
+        self.has_image
+    }
 }
 
 /// An image content block.
@@ -149,9 +195,15 @@ pub struct ImageBlock {
 #[Object]
 impl ImageBlock {
     #[graphql(name = "type")]
-    async fn block_type(&self) -> ContentBlockType { self.block_type }
-    async fn media_type(&self) -> &str { &self.media_type }
-    async fn data_url(&self) -> &str { &self.data_url }
+    async fn block_type(&self) -> ContentBlockType {
+        self.block_type
+    }
+    async fn media_type(&self) -> &str {
+        &self.media_type
+    }
+    async fn data_url(&self) -> &str {
+        &self.data_url
+    }
 }
 
 /// Agent task stub for ToolUseBlock.agentTask field.
@@ -163,23 +215,81 @@ pub struct AgentTask {
 /// Get tool metadata (category, icon, display name, color) from tool name.
 pub fn get_tool_metadata(tool_name: &str) -> (ToolCategory, &'static str, String, &'static str) {
     match tool_name {
-        "Read" => (ToolCategory::File, "file-text", "Read File".to_string(), "#3b82f6"),
-        "Write" => (ToolCategory::File, "file-plus", "Write File".to_string(), "#22c55e"),
-        "Edit" => (ToolCategory::File, "file-edit", "Edit File".to_string(), "#eab308"),
-        "Glob" => (ToolCategory::Search, "search", "Find Files".to_string(), "#8b5cf6"),
-        "Grep" => (ToolCategory::Search, "search-code", "Search Code".to_string(), "#8b5cf6"),
-        "Bash" => (ToolCategory::Shell, "terminal", "Run Command".to_string(), "#f97316"),
-        "Agent" | "Task" => (ToolCategory::Task, "git-branch", "Spawn Agent".to_string(), "#06b6d4"),
-        "TodoWrite" | "TaskCreate" | "TaskUpdate" | "TaskList" | "TaskGet" => {
-            (ToolCategory::Task, "check-square", tool_name.to_string(), "#06b6d4")
-        }
-        "WebFetch" => (ToolCategory::Web, "globe", "Fetch URL".to_string(), "#ec4899"),
-        "WebSearch" => (ToolCategory::Search, "search", "Web Search".to_string(), "#ec4899"),
-        "NotebookEdit" => (ToolCategory::File, "book-open", "Edit Notebook".to_string(), "#eab308"),
+        "Read" => (
+            ToolCategory::File,
+            "file-text",
+            "Read File".to_string(),
+            "#3b82f6",
+        ),
+        "Write" => (
+            ToolCategory::File,
+            "file-plus",
+            "Write File".to_string(),
+            "#22c55e",
+        ),
+        "Edit" => (
+            ToolCategory::File,
+            "file-edit",
+            "Edit File".to_string(),
+            "#eab308",
+        ),
+        "Glob" => (
+            ToolCategory::Search,
+            "search",
+            "Find Files".to_string(),
+            "#8b5cf6",
+        ),
+        "Grep" => (
+            ToolCategory::Search,
+            "search-code",
+            "Search Code".to_string(),
+            "#8b5cf6",
+        ),
+        "Bash" => (
+            ToolCategory::Shell,
+            "terminal",
+            "Run Command".to_string(),
+            "#f97316",
+        ),
+        "Agent" | "Task" => (
+            ToolCategory::Task,
+            "git-branch",
+            "Spawn Agent".to_string(),
+            "#06b6d4",
+        ),
+        "TodoWrite" | "TaskCreate" | "TaskUpdate" | "TaskList" | "TaskGet" => (
+            ToolCategory::Task,
+            "check-square",
+            tool_name.to_string(),
+            "#06b6d4",
+        ),
+        "WebFetch" => (
+            ToolCategory::Web,
+            "globe",
+            "Fetch URL".to_string(),
+            "#ec4899",
+        ),
+        "WebSearch" => (
+            ToolCategory::Search,
+            "search",
+            "Web Search".to_string(),
+            "#ec4899",
+        ),
+        "NotebookEdit" => (
+            ToolCategory::File,
+            "book-open",
+            "Edit Notebook".to_string(),
+            "#eab308",
+        ),
         name if name.starts_with("mcp__") => {
             (ToolCategory::Mcp, "plug", name.to_string(), "#a855f7")
         }
-        _ => (ToolCategory::Other, "tool", tool_name.to_string(), "#6b7280"),
+        _ => (
+            ToolCategory::Other,
+            "tool",
+            tool_name.to_string(),
+            "#6b7280",
+        ),
     }
 }
 
@@ -225,10 +335,7 @@ pub fn parse_content_blocks(
     vec![]
 }
 
-fn parse_single_block(
-    block: &serde_json::Value,
-    session_id: Option<&str>,
-) -> Option<ContentBlock> {
+fn parse_single_block(block: &serde_json::Value, session_id: Option<&str>) -> Option<ContentBlock> {
     let block_type = block.get("type")?.as_str()?;
 
     match block_type {
@@ -243,7 +350,10 @@ fn parse_single_block(
                 block_type: ContentBlockType::Thinking,
                 thinking,
                 preview,
-                signature: block.get("signature").and_then(|s| s.as_str()).map(|s| s.to_string()),
+                signature: block
+                    .get("signature")
+                    .and_then(|s| s.as_str())
+                    .map(|s| s.to_string()),
             }))
         }
         "text" => {
@@ -280,7 +390,10 @@ fn parse_single_block(
             let has_image = block
                 .get("content")
                 .and_then(|c| c.as_array())
-                .map(|arr| arr.iter().any(|c| c.get("type").and_then(|t| t.as_str()) == Some("image")))
+                .map(|arr| {
+                    arr.iter()
+                        .any(|c| c.get("type").and_then(|t| t.as_str()) == Some("image"))
+                })
                 .unwrap_or(false);
             let is_long = content_str.len() > 500;
             let preview = if is_long {
@@ -292,7 +405,10 @@ fn parse_single_block(
                 block_type: ContentBlockType::ToolResult,
                 tool_call_id,
                 content: content_str,
-                is_error: block.get("is_error").and_then(|e| e.as_bool()).unwrap_or(false),
+                is_error: block
+                    .get("is_error")
+                    .and_then(|e| e.as_bool())
+                    .unwrap_or(false),
                 is_long,
                 preview,
                 has_image,
@@ -322,7 +438,9 @@ fn extract_tool_result_content(block: &serde_json::Value) -> String {
                 .iter()
                 .filter_map(|c| {
                     if c.get("type")?.as_str()? == "text" {
-                        c.get("text").and_then(|t| t.as_str()).map(|s| s.to_string())
+                        c.get("text")
+                            .and_then(|t| t.as_str())
+                            .map(|s| s.to_string())
                     } else {
                         None
                     }
@@ -448,7 +566,9 @@ mod tests {
     #[test]
     fn test_tool_result_long_content() {
         let long_content = "x".repeat(600);
-        let raw = format!(r#"{{"message":{{"content":[{{"type":"tool_result","tool_use_id":"c1","content":"{long_content}"}}]}}}}"#);
+        let raw = format!(
+            r#"{{"message":{{"content":[{{"type":"tool_result","tool_use_id":"c1","content":"{long_content}"}}]}}}}"#
+        );
         let blocks = parse_content_blocks(None, Some(&raw), None);
         match &blocks[0] {
             ContentBlock::ToolResult(b) => {
@@ -510,7 +630,9 @@ mod tests {
     #[test]
     fn test_thinking_block_preview_truncation() {
         let long_thinking = "a".repeat(300);
-        let raw = format!(r#"{{"message":{{"content":[{{"type":"thinking","thinking":"{long_thinking}"}}]}}}}"#);
+        let raw = format!(
+            r#"{{"message":{{"content":[{{"type":"thinking","thinking":"{long_thinking}"}}]}}}}"#
+        );
         let blocks = parse_content_blocks(None, Some(&raw), None);
         match &blocks[0] {
             ContentBlock::Thinking(b) => {

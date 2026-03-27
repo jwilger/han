@@ -74,7 +74,9 @@ pub fn encode_session_cursor(session_id: &str, date: &str) -> String {
 /// Decode a session cursor from base64.
 pub fn decode_session_cursor(cursor: &str) -> Option<(String, String)> {
     use base64::Engine;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(cursor).ok()?;
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(cursor)
+        .ok()?;
     let raw = String::from_utf8(bytes).ok()?;
     let colon_idx = raw.find(':')?;
     let session_id = raw[..colon_idx].to_string();

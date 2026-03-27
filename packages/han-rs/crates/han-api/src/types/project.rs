@@ -18,7 +18,7 @@ fn nonzero_to_bool(v: Option<i32>) -> bool {
     model = "han_db::entities::projects::Model",
     entity = "han_db::entities::projects::Entity",
     columns = "han_db::entities::projects::Column",
-    type_name = "Project",
+    type_name = "Project"
 )]
 pub struct Project {
     #[graphql(skip)]
@@ -41,11 +41,15 @@ pub struct Project {
 #[ComplexObject]
 impl Project {
     /// Global ID (required by Node interface).
-    pub async fn id(&self) -> ID { encode_global_id("Project", &self.raw_id) }
+    pub async fn id(&self) -> ID {
+        encode_global_id("Project", &self.raw_id)
+    }
 
     // Backwards-compatible fields for browse-client
     /// Alias for raw_id.
-    async fn project_id(&self) -> &str { &self.raw_id }
+    async fn project_id(&self) -> &str {
+        &self.raw_id
+    }
 
     /// Total sessions count.
     async fn total_sessions(&self, ctx: &Context<'_>) -> Result<Option<i32>> {
@@ -64,13 +68,21 @@ impl Project {
     }
 
     /// Last activity timestamp.
-    async fn last_activity(&self) -> Option<&str> { Some(&self.updated_at) }
+    async fn last_activity(&self) -> Option<&str> {
+        Some(&self.updated_at)
+    }
     /// Worktrees (stub).
-    async fn worktrees(&self) -> Option<Vec<Project>> { Some(vec![]) }
+    async fn worktrees(&self) -> Option<Vec<Project>> {
+        Some(vec![])
+    }
     /// Subdirectory projects (stub).
-    async fn subdirs(&self) -> Option<Vec<Project>> { Some(vec![]) }
+    async fn subdirs(&self) -> Option<Vec<Project>> {
+        Some(vec![])
+    }
     /// Installed plugins (stub).
-    async fn plugins(&self) -> Option<Vec<crate::types::plugin::Plugin>> { Some(vec![]) }
+    async fn plugins(&self) -> Option<Vec<crate::types::plugin::Plugin>> {
+        Some(vec![])
+    }
 }
 
 #[cfg(test)]
@@ -175,15 +187,13 @@ mod tests {
     #[test]
     fn filter_logical_combinators() {
         let f = ProjectFilter {
-            and: Some(vec![
-                ProjectFilter {
-                    name: Some(crate::filters::types::StringFilter {
-                        contains: Some("test".into()),
-                        ..Default::default()
-                    }),
+            and: Some(vec![ProjectFilter {
+                name: Some(crate::filters::types::StringFilter {
+                    contains: Some("test".into()),
                     ..Default::default()
-                },
-            ]),
+                }),
+                ..Default::default()
+            }]),
             or: Some(vec![ProjectFilter::default()]),
             not: Some(Box::new(ProjectFilter::default())),
             ..Default::default()

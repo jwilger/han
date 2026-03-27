@@ -1,7 +1,7 @@
 //! Todo GraphQL types.
 
-use async_graphql::*;
 use crate::connection::PageInfo;
+use async_graphql::*;
 
 /// Todo item from Claude Code's TodoWrite tool.
 #[derive(Debug, Clone, SimpleObject)]

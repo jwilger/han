@@ -1,7 +1,7 @@
 //! Memory-related GraphQL types.
 
-use async_graphql::*;
 use crate::types::enums::{Confidence, MemoryAgentProgressType};
+use async_graphql::*;
 
 /// Memory query type (namespace for memory operations).
 #[derive(Debug, Clone, SimpleObject)]
@@ -59,7 +59,9 @@ mod tests {
 
     #[test]
     fn memory_query_construction() {
-        let mq = MemoryQuery { placeholder: Some(true) };
+        let mq = MemoryQuery {
+            placeholder: Some(true),
+        };
         assert_eq!(mq.placeholder, Some(true));
     }
 
