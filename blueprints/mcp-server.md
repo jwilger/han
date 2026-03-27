@@ -71,7 +71,7 @@ Returns available tools discovered from installed plugins.
 {
   "tools": [
     {
-      "name": "jutsu_typescript_lint",
+      "name": "typescript_lint",
       "description": "Lint TypeScript code...",
       "annotations": {
         "title": "Lint Typescript",
@@ -100,7 +100,7 @@ Execute a tool.
 
 ```json
 {
-  "name": "jutsu_typescript_lint",
+  "name": "typescript_lint",
   "arguments": {
     "verbose": false,
     "directory": "packages/core"
@@ -151,7 +151,7 @@ Execute a tool.
 
 - Format: `{pluginName}_{hookName}`
 - Dashes replaced with underscores
-- Example: `jutsu-typescript` + `lint` → `jutsu_typescript_lint`
+- Example: `typescript` + `lint` → `typescript_lint`
 
 ### Tool Description Generation
 
@@ -192,9 +192,9 @@ console.log = (...args) => {
 
 ## External MCP Integrations
 
-In addition to Han's own MCP server (`hashi-han`), Han provides several hashi plugins that integrate with external MCP servers:
+In addition to Han's own MCP server, Han provides several service plugins that integrate with external MCP servers:
 
-### hashi-figma
+### figma (service plugin)
 
 **Purpose:** Design-to-code workflow integration
 
@@ -216,7 +216,7 @@ In addition to Han's own MCP server (`hashi-han`), Han provides several hashi pl
 
 **Authentication:** Zero-config (Figma Desktop handles authentication)
 
-### hashi-sentry
+### sentry (service plugin)
 
 **Purpose:** Production observability and error tracking
 
@@ -255,8 +255,8 @@ The `core` plugin provides two essential MCP servers that are automatically conf
 **Hook Commands:**
 
 - Dynamically exposes tools for installed plugins
-- Test commands (e.g., `mcp__plugin_hashi-han_han__jutsu_bun_test`)
-- Lint commands (e.g., `mcp__plugin_hashi-han_han__jutsu_biome_lint`)
+- Test commands (e.g., `mcp__plugin_core_han__bun_test`)
+- Lint commands (e.g., `mcp__plugin_core_han__biome_lint`)
 - Format, typecheck, and validation commands
 - Smart caching and directory detection
 
@@ -297,17 +297,17 @@ Built-in MCP servers that provide essential infrastructure. These are automatica
 
 **Use Case:** Foundation services needed by all Han installations
 
-### 2. External Integrations (hashi-* plugins)
+### 2. External Integrations (service plugins)
 
-Bridge plugins that connect Claude Code with external services via their official MCP servers.
+Service plugins that connect Claude Code with external services via their official MCP servers.
 
 **Examples:**
 
-- **hashi-github**: GitHub repository operations, issues, PRs, code search
-- **hashi-figma**: Design-to-code workflow, design token extraction
-- **hashi-sentry**: Error tracking, performance monitoring, incident response
-- **hashi-playwright-mcp**: Browser automation and testing
-- **hashi-linear, hashi-jira, hashi-clickup**: Project management integrations
+- **github**: GitHub repository operations, issues, PRs, code search
+- **figma**: Design-to-code workflow, design token extraction
+- **sentry**: Error tracking, performance monitoring, incident response
+- **playwright**: Browser automation and testing
+- **linear, jira, clickup**: Project management integrations
 
 **Use Case:** External service integration for specific workflows
 
@@ -315,5 +315,5 @@ Bridge plugins that connect Claude Code with external services via their officia
 
 - [Hook System](./hook-system.md) - Hook definitions and execution
 - [Settings Management](./settings-management.md) - Plugin discovery
-- [Metrics System](./metrics-system.md) - Performance tracking via hashi-han-metrics
+- [Metrics System](./metrics-system.md) - Performance tracking via native task system
 - [SDLC Coverage](./sdlc-coverage.md) - MCP integrations across SDLC phases

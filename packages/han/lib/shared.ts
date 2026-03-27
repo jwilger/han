@@ -540,6 +540,7 @@ export async function detectPluginsWithAgent(
         includePartialMessages: true,
         allowedTools,
         pathToClaudeCodeExecutable: claudePath,
+        persistSession: false,
       },
     });
 
@@ -635,9 +636,9 @@ export async function fetchMarketplace(
  * Extract plugin name from plugin root path, handling versioned cache paths.
  *
  * Examples:
- * - /path/to/jutsu-elixir -> jutsu-elixir
- * - /path/to/jutsu-elixir/1.1.1 -> jutsu-elixir (versioned cache path)
- * - /path/to/plugins/marketplaces/han/jutsu/jutsu-typescript -> jutsu-typescript
+ * - /path/to/elixir -> elixir
+ * - /path/to/elixir/1.1.1 -> elixir (versioned cache path)
+ * - /path/to/plugins/marketplaces/han/languages/typescript -> typescript
  * - /path/to/plugins/marketplaces/han/core -> core
  */
 export function getPluginNameFromRoot(pluginRoot: string): string {

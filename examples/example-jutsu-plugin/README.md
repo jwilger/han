@@ -1,4 +1,4 @@
-# Example Jutsu Plugin
+# Example Plugin
 
 A reference implementation for third-party Han plugins. This plugin demonstrates the correct structure, configuration, and best practices for creating Han plugins.
 
@@ -45,7 +45,7 @@ Skill("example-jutsu-plugin:plugin-development")
 ```
 
 Covers:
-- Plugin types (jutsu, do, hashi)
+- Plugin types (language, validation, discipline, service, tool)
 - Directory structure
 - Configuration files
 - Hook development
@@ -105,11 +105,11 @@ example-jutsu-plugin/
    han plugin install /path/to/my-plugin --scope project
    ```
 
-## Plugin Types
+## Plugin Categories
 
-- **jutsu-*** - Skills and validation hooks for languages/tools
-- **do-*** - Specialized agents for specific disciplines
-- **hashi-*** - MCP servers bridging external services
+- **languages/**, **validation/** - Skills and validation hooks for languages/tools
+- **disciplines/** - Specialized agents for specific disciplines
+- **services/**, **tools/** - MCP servers for external integrations
 
 ## Configuration Reference
 

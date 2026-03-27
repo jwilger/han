@@ -51,35 +51,11 @@ function isClaudeAvailable(): boolean {
 function showAvailablePlugins(marketplacePlugins: MarketplacePlugin[]): void {
   console.error('Available plugins:');
 
-  const jutsus = marketplacePlugins
-    .filter((p) => p.name.startsWith('jutsu-'))
-    .map((p) => p.name);
-  const dos = marketplacePlugins
-    .filter((p) => p.name.startsWith('do-'))
-    .map((p) => p.name);
-  const hashis = marketplacePlugins
-    .filter((p) => p.name.startsWith('hashi-'))
-    .map((p) => p.name);
-  const others = marketplacePlugins
-    .filter(
-      (p) =>
-        !p.name.startsWith('jutsu-') &&
-        !p.name.startsWith('do-') &&
-        !p.name.startsWith('hashi-')
-    )
-    .map((p) => p.name);
+  // Group plugins by category based on source path or name patterns
+  const allNames = marketplacePlugins.map((p) => p.name);
 
-  if (others.length > 0) {
-    console.error(`  Core: ${others.join(', ')}`);
-  }
-  if (jutsus.length > 0) {
-    console.error(`  Jutsus: ${jutsus.join(', ')}`);
-  }
-  if (dos.length > 0) {
-    console.error(`  Dōs: ${dos.join(', ')}`);
-  }
-  if (hashis.length > 0) {
-    console.error(`  Hashis: ${hashis.join(', ')}`);
+  if (allNames.length > 0) {
+    console.error(`  Plugins: ${allNames.join(', ')}`);
   }
 
   console.error("\nTip: Use 'han plugin search <query>' to find plugins.");

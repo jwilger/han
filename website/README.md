@@ -9,7 +9,7 @@ This is the marketing website for Han. It's built with Next.js and deployed to G
 - Modern, responsive design with Tailwind CSS
 - Static site generation for optimal performance
 - Showcases the three pillars: Knowledge, Action, and Discipline
-- Explains plugin categories (Core, Jutsu, Do, Hashi, Bushido)
+- Explains plugin categories (Core, Languages, Validation, Services, Tools, Frameworks, Disciplines)
 - Provides installation instructions
 - Hosts marketplace.json at `/marketplace.json`
 

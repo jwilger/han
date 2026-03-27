@@ -50,8 +50,8 @@ All phases complete. The memory system is production-ready with:
 │  ───────────────               │   │  ──────────────             │
 │  Tools (all read-only):        │   │  Discovered from plugins:   │
 │  • memory_search_fts           │   │  • blueprints (core)        │
-│  • memory_search_vector        │   │  • github (hashi-github)    │
-│  • memory_search_hybrid        │   │  • gitlab (hashi-gitlab)    │
+│  • memory_search_vector        │   │  • github (service plugin)  │
+│  • memory_search_hybrid        │   │  • gitlab (service plugin)  │
 │  • memory_search_multi_strategy│   │  • (future providers)       │
 │  • memory_search_with_fallbacks│   │                             │
 │  • memory_list_layers          │   │  Each plugin defines:       │
@@ -149,7 +149,7 @@ memory:
 ```
 
 ```yaml
-# Example: hashi-github/han-plugin.yml (if it had memory integration)
+# Example: services/github/han-plugin.yml (if it had memory integration)
 memory:
   allowed_tools:
     - mcp__github__search_pull_requests
@@ -328,7 +328,7 @@ This tool:
 External memory providers are discovered from installed plugins with `memory.allowed_tools`:
 
 ```yaml
-# hashi-github/han-plugin.yml
+# services/github/han-plugin.yml
 mcp_servers:
   github:
     type: http
@@ -342,7 +342,7 @@ memory:
     Search GitHub for PRs and issues relevant to the query.
 ```
 
-When hashi-github is installed:
+When the github service plugin is installed:
 - Memory Agent inherits access to GitHub MCP
 - `allowed_tools` are added to Memory Agent's tool list
 - System prompt guides tool usage

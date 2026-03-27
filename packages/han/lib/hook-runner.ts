@@ -51,7 +51,7 @@ import {
 import { getPluginNameFromRoot, isDebugMode } from './shared.ts';
 
 // Re-export for tests
-export { HAN_FILES_TEMPLATE, buildCommandWithFiles };
+export { buildCommandWithFiles, HAN_FILES_TEMPLATE };
 
 /**
  * Compute SHA256 hash of a command string.
@@ -730,7 +730,7 @@ function discoverPluginRoot(pluginName: string): string | null {
  */
 export interface RunConfiguredHookOptions {
   /**
-   * The plugin name (e.g., "jutsu-elixir")
+   * The plugin name (e.g., "elixir")
    * Used to validate CLAUDE_PLUGIN_ROOT and generate proper error messages
    */
   pluginName: string;

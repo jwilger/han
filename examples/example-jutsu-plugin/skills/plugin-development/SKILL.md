@@ -10,11 +10,11 @@ This skill provides comprehensive guidance for developing Han plugins.
 
 ## Plugin Types
 
-Han supports three plugin types:
+Han supports several plugin categories:
 
-1. **Jutsu (Technique)** - Skills and validation hooks for languages/tools
-2. **Do (Discipline)** - Specialized agents for specific domains
-3. **Hashi (Bridge)** - MCP servers for external integrations
+1. **Language/Validation** - Skills and validation hooks for languages/tools
+2. **Discipline** - Specialized agents for specific domains
+3. **Service/Tool** - MCP servers for external integrations
 
 ## Directory Structure
 
@@ -160,7 +160,7 @@ This checks:
 
 ### General
 
-1. **Follow naming conventions** - jutsu-*, do-*, hashi-*
+1. **Follow naming conventions** - short names matching directory
 2. **Include README** - Installation and usage docs
 3. **Version properly** - Use semantic versioning
 4. **Test locally** - Install via path before publishing

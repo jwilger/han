@@ -221,7 +221,7 @@ interface MemoryAgentMcpConfig {
  *
  * ALL MCP servers are discovered from plugins with BOTH `mcp` AND `memory` keys.
  * This includes the core DAL (defined in core/han-plugin.yml) and external
- * providers like hashi-github, hashi-blueprints, etc.
+ * providers like the github service plugin, blueprints, etc.
  *
  * @param projectPath - Optional project path for plugin discovery context
  * Returns:
@@ -357,6 +357,7 @@ IMPORTANT: You ONLY have access to MCP search tools listed in allowedTools. Do N
       pathToClaudeCodeExecutable: claudePath,
       mcpServers,
       allowedTools, // CRITICAL: Only MCP tools, blocks Bash/Read/Write/Glob
+      persistSession: false,
       outputFormat: {
         type: 'json_schema',
         schema: MEMORY_AGENT_OUTPUT_SCHEMA,

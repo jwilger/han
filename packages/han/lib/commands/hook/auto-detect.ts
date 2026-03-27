@@ -79,7 +79,7 @@ interface CompiledLearnPattern {
 
 /**
  * VCS host to plugin mapping
- * Note: Plugin names use the new short format (e.g., "github" not "hashi-github")
+ * Note: Plugin names use short format (e.g., "github" not "hashi-github")
  */
 const VCS_PLUGIN_MAP: Record<string, string> = {
   'github.com': 'github',
@@ -484,7 +484,7 @@ export async function autoDetect(): Promise<void> {
       matches.push({
         plugin: {
           name: vcsPlugin,
-          description: `VCS integration for ${vcsPlugin.replace('hashi-', '')}`,
+          description: `VCS integration for ${vcsPlugin}`,
           detection: { dirsWith: ['.git'] },
         },
         matchedDir: process.cwd(),

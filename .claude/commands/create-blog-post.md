@@ -68,9 +68,9 @@ Analyze how Han's features address the discovered pain points:
 
 | Reddit Pain Point | Han Solution |
 |-------------------|--------------|
-| Inconsistent code quality | Jutsu validation hooks |
-| Lack of specialization | Do discipline agents |
-| Poor tool integration | Hashi MCP bridges |
+| Inconsistent code quality | Validation plugin hooks |
+| Lack of specialization | Discipline plugin agents |
+| Poor tool integration | Service plugin MCP integrations |
 | No memory across sessions | Memory system |
 | Uncalibrated confidence | Metrics tracking |
 | Missing documentation | Blueprints system |

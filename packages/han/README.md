@@ -25,9 +25,9 @@ han plugin install --auto
 | Category | Description |
 |----------|-------------|
 | **Core** | Essential infrastructure—always required |
-| **Jutsu** (Tools) | Validation hooks: TypeScript, Biome, Pytest, RSpec, etc. |
-| **Dō** (Agents) | Specialized agents: code review, debugging, architecture |
-| **Hashi** (Integrations) | MCP servers: GitHub, Playwright, Blueprints |
+| **Languages/Validation** | Validation hooks: TypeScript, Biome, Pytest, RSpec, etc. |
+| **Disciplines** | Specialized agents: code review, debugging, architecture |
+| **Services/Tools** | MCP servers: GitHub, Playwright, Blueprints |
 
 ## Commands
 
@@ -64,9 +64,9 @@ han hook run <plugin> <hook> --verbose    # Show full output
 **Examples:**
 
 ```bash
-han hook run jutsu-typescript typecheck
-han hook run jutsu-biome lint --cached
-han hook run jutsu-elixir test --only=packages/core
+han hook run typescript typecheck
+han hook run biome lint --cached
+han hook run elixir test --only=packages/core
 ```
 
 ### hook explain

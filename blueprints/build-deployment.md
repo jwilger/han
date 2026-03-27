@@ -372,10 +372,7 @@ on:
     paths:
       - "website/**"
       - ".claude-plugin/marketplace.json"
-      - "jutsu/**"  # Plugin content changes
-      - "do/**"
-      - "hashi/**"
-      - "bushido/**"
+      - "plugins/**"  # Plugin content changes
 ```
 
 **Process**:

@@ -27,7 +27,7 @@ Add new quality principles and practices to the core bushido plugin.
 - Provide practical examples
 - Add to `/bushido/skills/` directory
 
-### ⚔️ New Jutsu Plugins (Techniques)
+### ⚔️ New Language/Validation Plugins
 
 Create validation hooks for languages, frameworks, or tools.
 
@@ -41,7 +41,7 @@ Create validation hooks for languages, frameworks, or tools.
 **Structure:**
 
 ```
-jutsu-{name}/
+plugins/languages/{name}/   # or plugins/validation/{name}/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── hooks/
@@ -79,7 +79,7 @@ jutsu-{name}/
 }
 ```
 
-### 🛤️ New Dō Plugins (Disciplines)
+### 🛤️ New Discipline Plugins
 
 Create specialized agents for development practices.
 
@@ -88,12 +88,12 @@ Create specialized agents for development practices.
 - Focus on practice and discipline, not specific tools
 - Include agent markdown files with clear expertise
 - Provide skills that embody the discipline
-- Add to `/do/` directory
+- Add to `plugins/disciplines/` directory
 
 **Structure:**
 
 ```
-do-{discipline}/
+plugins/disciplines/{discipline}/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── agents/
@@ -102,7 +102,7 @@ do-{discipline}/
 └── README.md
 ```
 
-### 🌉 New Hashi Plugins (Bridges)
+### 🌉 New Service/Tool Plugins
 
 Add MCP servers that provide external knowledge and integrations.
 
@@ -111,12 +111,12 @@ Add MCP servers that provide external knowledge and integrations.
 - Follow MCP server specifications
 - Include clear documentation
 - Provide value beyond what's available in Claude's knowledge
-- Add to `/hashi/` directory
+- Add to `plugins/services/` or `plugins/tools/` directory
 
 **Structure:**
 
 ```
-hashi-{name}/
+plugins/services/{name}/   # or plugins/tools/{name}/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── .mcp.json
@@ -142,9 +142,9 @@ Claude Code can help you generate high-quality plugins and contributions. You ca
 
 Han provides three slash commands for creating plugins with comprehensive guidance:
 
-- **`/create-jutsu`** - Create a new jutsu (weapon) plugin with validation hooks
-- **`/create-do`** - Create a new dō (discipline) plugin with specialized agents
-- **`/create-hashi`** - Create a new hashi (teacher) MCP server plugin
+- **`/create-jutsu`** - Create a new language/validation plugin with validation hooks
+- **`/create-do`** - Create a new discipline plugin with specialized agents
+- **`/create-hashi`** - Create a new service plugin with MCP server integration
 
 These commands provide detailed, step-by-step instructions for creating each plugin type, including:
 
@@ -166,12 +166,12 @@ Then follow the comprehensive instructions provided by the command.
 
 You can also use natural language prompts to create plugins. Here are example prompts for each type of contribution:
 
-### Creating a Jutsu Plugin
+### Creating a Language/Validation Plugin
 
 **Example Prompt:**
 
 ```
-Add a jutsu for <tool-name> that validates <what it validates>.
+Add a validation plugin for <tool-name> that validates <what it validates>.
 It should use --dirs-with <marker-file> and run <validation-command>.
 Include skills for <skill-topics>.
 ```
@@ -179,40 +179,40 @@ Include skills for <skill-topics>.
 **Real Example:**
 
 ```
-Add a jutsu for kubernetes that validates manifests.
+Add a validation plugin for kubernetes that validates manifests.
 It should use --dirs-with *.yaml,*.yml and run kubeconform.
 Include skills for kubernetes-manifests, kubernetes-resources, and kubernetes-security.
 ```
 
 **What Claude Will Generate:**
 
-- `jutsu-{name}/.claude-plugin/marketplace.json` - Plugin metadata
-- `jutsu-{name}/hooks/hooks.json` - Validation hooks with proper `han hook run` usage
-- `jutsu-{name}/README.md` - Installation and usage documentation
-- `jutsu-{name}/skills/{skill-name}/SKILL.md` - Comprehensive skill documentation
+- `plugins/validation/{name}/.claude-plugin/plugin.json` - Plugin metadata
+- `plugins/validation/{name}/hooks/hooks.json` - Validation hooks with proper `han hook run` usage
+- `plugins/validation/{name}/README.md` - Installation and usage documentation
+- `plugins/validation/{name}/skills/{skill-name}/SKILL.md` - Comprehensive skill documentation
 
-### Creating a Dō Discipline Agent
+### Creating a Discipline Agent
 
 **Example Prompt:**
 
 ```
-Add a dō for <discipline> with an agent that acts as <expert-role>.
+Add a discipline plugin for <discipline> with an agent that acts as <expert-role>.
 Include skills for <skill-topics>.
 ```
 
 **Real Example:**
 
 ```
-Add a dō for SRE with an agent that acts as a site reliability engineer.
+Add a discipline plugin for SRE with an agent that acts as a site reliability engineer.
 Include skills for monitoring, incident-response, and reliability engineering.
 ```
 
 **What Claude Will Generate:**
 
-- `do-{discipline}/.claude-plugin/marketplace.json` - Plugin metadata
-- `do-{discipline}/agents/{agent-name}.md` - Agent persona and expertise
-- `do-{discipline}/README.md` - Overview and usage guide
-- `do-{discipline}/skills/{skill-name}/SKILL.md` - Discipline-specific skills
+- `plugins/disciplines/{discipline}/.claude-plugin/plugin.json` - Plugin metadata
+- `plugins/disciplines/{discipline}/agents/{agent-name}.md` - Agent persona and expertise
+- `plugins/disciplines/{discipline}/README.md` - Overview and usage guide
+- `plugins/disciplines/{discipline}/skills/{skill-name}/SKILL.md` - Discipline-specific skills
 
 ### Creating Bushido Skills
 
@@ -239,15 +239,15 @@ Include examples of good and bad refactoring practices.
 **Example Prompt:**
 
 ```
-Add jutsus for <tool1>, <tool2>, and <tool3> along with other comparable deployment tools.
-Also create a dō acting as an <expert-role>.
+Add validation plugins for <tool1>, <tool2>, and <tool3> along with other comparable deployment tools.
+Also create a discipline plugin acting as an <expert-role>.
 ```
 
 **Real Example:**
 
 ```
-Add jutsus for kubernetes, helm, and terraform along with other comparable deployment tools.
-Also create a dō acting as an SRE.
+Add validation plugins for kubernetes, helm, and terraform along with other comparable deployment tools.
+Also create a discipline plugin acting as an SRE.
 ```
 
 **What Claude Will Generate:**
@@ -267,7 +267,7 @@ Multiple complete plugins with all necessary files, maintaining consistency acro
 When you request plugin generation, Claude will:
 
 - ✅ Use proper directory structure
-- ✅ Follow naming conventions (jutsu-*, do-*, hashi-*)
+- ✅ Follow naming conventions (short names matching directory)
 - ✅ Include marketplace.json with metadata
 - ✅ Create hooks.json with `han hook run` patterns
 - ✅ Generate comprehensive README.md files
@@ -316,7 +316,7 @@ git checkout -b feature/your-feature-name
 
 ### 4. Test Thoroughly
 
-For jutsu plugins:
+For validation plugins:
 
 ```bash
 # Test validation hooks work correctly
@@ -343,7 +343,7 @@ npm test
 
 **PR Title Format:**
 
-- `feat(jutsu): add markdownlint plugin`
+- `feat(validation): add markdownlint plugin`
 - `fix(han): improve error messages`
 - `docs: update contributing guidelines`
 
@@ -356,22 +356,25 @@ npm test
 
 ## Plugin Naming Conventions
 
-### Jutsu (Techniques)
+### Languages/Validation Plugins
 
-- `jutsu-{tool-name}` - e.g., `jutsu-jest`, `jutsu-typescript`
+- `{tool-name}` - e.g., `jest`, `typescript`, `biome`
 - Use lowercase, hyphenated names
-- Name after the tool, not the language (e.g., `jutsu-pytest` not `jutsu-python-testing`)
+- Name after the tool, not the language (e.g., `pytest` not `python-testing`)
+- Directory: `plugins/languages/{name}/` or `plugins/validation/{name}/`
 
-### Dō (Disciplines)
+### Discipline Plugins
 
-- `do-{discipline}` - e.g., `do-frontend`, `do-security`
+- `{discipline}` - e.g., `frontend-development`, `security-engineering`
 - Focus on the practice, not the tools
 - Use general terms that transcend specific technologies
+- Directory: `plugins/disciplines/{name}/`
 
-### Hashi (Bridges)
+### Service/Tool Plugins
 
-- `hashi-{service}` - e.g., `hashi-context7`, `hashi-github`
+- `{service}` - e.g., `github`, `playwright`
 - Name after the knowledge source or service
+- Directory: `plugins/services/{name}/` or `plugins/tools/{name}/`
 
 ## Code Style
 
@@ -399,7 +402,7 @@ npm test
 
 ### Use han hook run
 
-All jutsu plugins should use the `han hook run` command:
+All validation plugins should use the `han hook run` command:
 
 ```json
 {

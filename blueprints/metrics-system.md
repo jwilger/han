@@ -562,7 +562,7 @@ query BlockedTasks($sessionId: ID!) {
 
 ## Migration from Legacy Metrics
 
-The old `hashi-han-metrics` MCP server with manual `start_task` / `complete_task` calls has been **removed**. It is replaced by this automatic system.
+The old metrics MCP server with manual `start_task` / `complete_task` calls has been **removed**. It is replaced by this automatic system.
 
 ### What Changed
 
