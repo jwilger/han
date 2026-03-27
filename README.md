@@ -35,14 +35,16 @@ brew install thebushidocollective/tap/han
 
 ## Plugin Categories
 
-139 plugins across four categories:
+139 plugins across six categories:
 
 | Category | Description | Examples |
 |----------|-------------|----------|
 | **Core** | Essential infrastructure. Auto-installs han binary, provides metrics and MCP servers | Always required |
-| **Jutsu** (Tools) | Validation plugins for your stack | TypeScript, Biome, Pytest, RSpec, ShellCheck |
-| **Dō** (Agents) | Specialized AI agents | Code review, debugging, architecture, security |
-| **Hashi** (Integrations) | MCP servers for external tools | GitHub, Playwright, Blueprints |
+| **Languages** | Validation plugins for your language/runtime | TypeScript, Rust, Python, Go, Ruby |
+| **Validation** | Linters, formatters, and quality tools | Biome, ESLint, ShellCheck, Pytest |
+| **Disciplines** | Specialized AI agents for engineering domains | Security, accessibility, API design, architecture |
+| **Services** | MCP servers for external platforms | GitHub, GitLab, Linear |
+| **Tools** | MCP servers for development utilities | Playwright, Blueprints, Context7 |
 
 Browse all plugins at [han.guru/plugins](https://han.guru/plugins/)
 
