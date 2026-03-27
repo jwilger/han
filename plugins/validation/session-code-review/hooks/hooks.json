@@ -1,0 +1,30 @@
+{
+  "description": "Backpressure code review — reviews session changes against REVIEW.md before allowing completion or commits",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Run /code-review to review all uncommitted and staged changes against the project's REVIEW.md and CLAUDE.md guidelines.\n\nIf there are no changes (empty diff), return {\"ok\": true}.\n\nAfter the review completes:\n- If no issues found: return {\"ok\": true}\n- If issues found: return {\"ok\": false, \"reason\": \"<the review findings>\"}\n\nOnly flag issues you are CERTAIN about. False positives waste time. When in doubt, allow.\n\nHook context: $ARGUMENTS",
+            "timeout": 300,
+            "statusMessage": "Reviewing session changes..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Check the bash command in the hook context below. If it is NOT a `git commit` or `git push` command, immediately return {\"ok\": true}.\n\nIf it IS a git commit or git push, run /code-review to review the changes being committed or pushed.\n\nAfter the review completes:\n- If no issues found: return {\"ok\": true}\n- If issues found: return {\"ok\": false, \"reason\": \"<the review findings>\"}\n\nOnly flag issues you are CERTAIN about. When in doubt, allow the commit.\n\nHook context: $ARGUMENTS",
+            "timeout": 300,
+            "statusMessage": "Reviewing changes before commit..."
+          }
+        ]
+      }
+    ]
+  }
+}

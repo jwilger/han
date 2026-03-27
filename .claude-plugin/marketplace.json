@@ -1356,6 +1356,20 @@
       ]
     },
     {
+      "name": "session-code-review",
+      "description": "Backpressure code review that validates changes against REVIEW.md before commits and session completion.",
+      "source": "./plugins/validation/session-code-review",
+      "category": "Validation",
+      "keywords": [
+        "code-review",
+        "review",
+        "backpressure",
+        "quality",
+        "validation",
+        "review.md"
+      ]
+    },
+    {
       "name": "shellcheck",
       "description": "Validation and quality enforcement for Bash and shell scripts using ShellCheck with portability and error handling skills.",
       "source": "./plugins/validation/shellcheck",
