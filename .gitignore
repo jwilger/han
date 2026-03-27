@@ -11,6 +11,9 @@ test-results
 out/
 tsconfig.tsbuildinfo
 
+# Audit screenshots
+audit*.png
+
 # Backup and temporary files
 *.bak
 *.bak*
