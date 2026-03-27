@@ -54,6 +54,15 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "han hook reference hooks/instruction-priority.md --must-read-first \"instruction priority hierarchy\"",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
