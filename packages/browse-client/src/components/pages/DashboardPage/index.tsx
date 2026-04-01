@@ -86,6 +86,22 @@ export const DashboardAnalyticsFragment = graphql`
         avgCompactions
         avgEffectiveness
       }
+      humanTimeEstimate {
+        totalHumanSeconds
+        totalAiSeconds
+        speedupFactor
+        hoursSaved
+        breakdown {
+          category
+          humanSeconds
+          percent
+        }
+        toolBreakdown {
+          toolName
+          invocations
+          humanSeconds
+        }
+      }
       costAnalysis {
         estimatedCostUsd
         isEstimated

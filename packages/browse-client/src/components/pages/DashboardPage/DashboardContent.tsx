@@ -38,6 +38,7 @@ import {
 	StatusItem,
 } from "./components.ts";
 import { HookHealthCard } from "./HookHealthCard.tsx";
+import { HumanTimeCard } from "./HumanTimeCard.tsx";
 import {
 	DashboardActivityFragment,
 	DashboardAnalyticsFragment,
@@ -299,6 +300,29 @@ export function DashboardContent({
 			avgCompactions: p?.avgCompactions ?? 0,
 			avgEffectiveness: p?.avgEffectiveness ?? 0,
 		})),
+		humanTimeEstimate: {
+			totalHumanSeconds:
+				rawAnalytics?.humanTimeEstimate?.totalHumanSeconds ?? 0,
+			totalAiSeconds:
+				rawAnalytics?.humanTimeEstimate?.totalAiSeconds ?? 0,
+			speedupFactor:
+				rawAnalytics?.humanTimeEstimate?.speedupFactor ?? 0,
+			hoursSaved: rawAnalytics?.humanTimeEstimate?.hoursSaved ?? 0,
+			breakdown: (
+				rawAnalytics?.humanTimeEstimate?.breakdown ?? []
+			).map((b) => ({
+				category: b?.category ?? "",
+				humanSeconds: b?.humanSeconds ?? 0,
+				percent: b?.percent ?? 0,
+			})),
+			toolBreakdown: (
+				rawAnalytics?.humanTimeEstimate?.toolBreakdown ?? []
+			).map((t) => ({
+				toolName: t?.toolName ?? "",
+				invocations: t?.invocations ?? 0,
+				humanSeconds: t?.humanSeconds ?? 0,
+			})),
+		},
 		costAnalysis: {
 			estimatedCostUsd: rawAnalytics?.costAnalysis?.estimatedCostUsd ?? 0,
 			isEstimated: rawAnalytics?.costAnalysis?.isEstimated ?? true,
@@ -678,6 +702,26 @@ export function DashboardContent({
 					</SectionCard>
 				</Box>
 			</HStack>
+
+			{/* Human Time Estimation - full width */}
+			<SectionCard title="Human Time Estimation (30 days)">
+				{analyticsLoaded ? (
+					<HumanTimeCard
+						humanTimeEstimate={analytics.humanTimeEstimate}
+					/>
+				) : (
+					<Box
+						style={{
+							display: "flex",
+							alignItems: "center",
+							justifyContent: "center",
+							minHeight: "120px",
+						}}
+					>
+						<Text color="muted">Loading time estimation...</Text>
+					</Box>
+				)}
+			</SectionCard>
 
 			{/* Performance Trend - full width */}
 			<SectionCard title="Session Performance Trend (30 days)">

@@ -113,6 +113,7 @@ pub struct DashboardAnalytics {
     pub subagent_usage: Option<Vec<SubagentUsageStats>>,
     pub tool_usage: Option<Vec<ToolUsageStats>>,
     pub performance_trend: Option<Vec<SessionPerformancePoint>>,
+    pub human_time_estimate: Option<HumanTimeEstimate>,
 }
 
 /// Weekly session performance data point for trend visualization.
@@ -268,6 +269,56 @@ pub struct SubagentUsageStats {
 pub struct ToolUsageStats {
     pub tool_name: Option<String>,
     pub count: Option<i32>,
+}
+
+// ============================================================================
+// Human Time Estimation
+// ============================================================================
+
+/// Human-equivalent time estimation for AI-completed work.
+///
+/// Estimates how long a human developer would take to perform the same
+/// actions that AI completed, based on realistic human performance benchmarks:
+/// - Reading: 250 words per minute (~187 tokens/min)
+/// - Typing code: 40 words per minute (~30 tokens/min)
+/// - File navigation: 15–45 seconds per operation
+/// - Cognitive overhead: 2 minutes per decision point
+#[derive(Debug, Clone, SimpleObject)]
+pub struct HumanTimeEstimate {
+    /// Total estimated human time in seconds.
+    pub total_human_seconds: Option<f64>,
+    /// Total actual AI time in seconds (wall clock).
+    pub total_ai_seconds: Option<f64>,
+    /// Speedup factor (human_time / ai_time).
+    pub speedup_factor: Option<f64>,
+    /// Human hours saved (human_time - ai_time), clamped to 0.
+    pub hours_saved: Option<f64>,
+    /// Breakdown by activity category.
+    pub breakdown: Option<Vec<HumanTimeBreakdown>>,
+    /// Per-tool-category time estimates.
+    pub tool_breakdown: Option<Vec<ToolTimeEstimate>>,
+}
+
+/// Time breakdown by activity category.
+#[derive(Debug, Clone, SimpleObject)]
+pub struct HumanTimeBreakdown {
+    /// Category label (e.g., "Reading AI Output", "Writing Code", "Searching").
+    pub category: Option<String>,
+    /// Estimated human seconds for this category.
+    pub human_seconds: Option<f64>,
+    /// Percentage of total human time.
+    pub percent: Option<f64>,
+}
+
+/// Per-tool-category human time estimate.
+#[derive(Debug, Clone, SimpleObject)]
+pub struct ToolTimeEstimate {
+    /// Tool name or category.
+    pub tool_name: Option<String>,
+    /// Number of invocations.
+    pub invocations: Option<i32>,
+    /// Total estimated human seconds for all invocations of this tool.
+    pub human_seconds: Option<f64>,
 }
 
 // ============================================================================
@@ -433,6 +484,7 @@ impl Default for DashboardAnalytics {
             subagent_usage: Some(vec![]),
             tool_usage: Some(vec![]),
             performance_trend: Some(vec![]),
+            human_time_estimate: None,
         }
     }
 }

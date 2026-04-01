@@ -369,6 +369,7 @@ type DashboardAnalytics {
 	subagentUsage: [SubagentUsageStats!]
 	toolUsage: [ToolUsageStats!]
 	performanceTrend: [SessionPerformancePoint!]
+	humanTimeEstimate: HumanTimeEstimate
 }
 
 type ExposedToolCallMessage implements Message {
@@ -887,6 +888,61 @@ type HourlyActivity {
 	hour: Int
 	sessionCount: Int
 	messageCount: Int
+}
+
+"""
+Time breakdown by activity category.
+"""
+type HumanTimeBreakdown {
+	"""
+	Category label (e.g., "Reading AI Output", "Writing Code", "Searching").
+	"""
+	category: String
+	"""
+	Estimated human seconds for this category.
+	"""
+	humanSeconds: Float
+	"""
+	Percentage of total human time.
+	"""
+	percent: Float
+}
+
+"""
+Human-equivalent time estimation for AI-completed work.
+
+Estimates how long a human developer would take to perform the same
+actions that AI completed, based on realistic human performance benchmarks:
+- Reading: 250 words per minute (~187 tokens/min)
+- Typing code: 40 words per minute (~30 tokens/min)
+- File navigation: 15–45 seconds per operation
+- Cognitive overhead: 2 minutes per decision point
+"""
+type HumanTimeEstimate {
+	"""
+	Total estimated human time in seconds.
+	"""
+	totalHumanSeconds: Float
+	"""
+	Total actual AI time in seconds (wall clock).
+	"""
+	totalAiSeconds: Float
+	"""
+	Speedup factor (human_time / ai_time).
+	"""
+	speedupFactor: Float
+	"""
+	Human hours saved (human_time - ai_time), clamped to 0.
+	"""
+	hoursSaved: Float
+	"""
+	Breakdown by activity category.
+	"""
+	breakdown: [HumanTimeBreakdown!]
+	"""
+	Per-tool-category time estimates.
+	"""
+	toolBreakdown: [ToolTimeEstimate!]
 }
 
 type ImageBlock implements ContentBlock {
@@ -2740,6 +2796,24 @@ type ToolResultUserMessage implements Message & UserMessage {
 	Number of tool results in this message.
 	"""
 	toolResultCount: Int
+}
+
+"""
+Per-tool-category human time estimate.
+"""
+type ToolTimeEstimate {
+	"""
+	Tool name or category.
+	"""
+	toolName: String
+	"""
+	Number of invocations.
+	"""
+	invocations: Int
+	"""
+	Total estimated human seconds for all invocations of this tool.
+	"""
+	humanSeconds: Float
 }
 
 """
