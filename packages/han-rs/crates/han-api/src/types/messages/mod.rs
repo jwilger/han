@@ -2094,6 +2094,7 @@ mod tests {
             lines_added: None,
             lines_removed: None,
             files_changed: None,
+            human_time_ms: None,
             indexed_at: None,
         }
     }

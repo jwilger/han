@@ -106,6 +106,7 @@ pub struct ParsedMessage {
     pub lines_added: Option<i32>,
     pub lines_removed: Option<i32>,
     pub files_changed: Option<i32>,
+    pub human_time_ms: Option<i32>,
     pub compact_type: Option<String>,
 }
 
