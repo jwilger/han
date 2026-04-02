@@ -48,10 +48,10 @@ interface HumanTimeCardProps {
 // =============================================================================
 
 const CATEGORY_COLORS: Record<string, string> = {
-	"Reading AI Output": "#3b82f6",
-	"Writing Code": "#10b981",
-	"Thinking & Deciding": "#f59e0b",
-	"Navigation & Tools": "#8b5cf6",
+	"Reading AI Output": theme.colors.primary,
+	"Writing Code": theme.colors.success,
+	"Thinking & Deciding": theme.colors.warning,
+	"Navigation & Tools": theme.colors.purple,
 };
 
 function getSpeedupDisplay(factor: number): {
@@ -62,28 +62,28 @@ function getSpeedupDisplay(factor: number): {
 	if (factor >= 100) {
 		return {
 			label: `${Math.round(factor)}x faster`,
-			color: "#10b981",
-			bgColor: "rgba(16, 185, 129, 0.15)",
+			color: theme.colors.success,
+			bgColor: `${theme.colors.success}26`,
 		};
 	}
 	if (factor >= 10) {
 		return {
 			label: `${Math.round(factor)}x faster`,
-			color: "#3b82f6",
-			bgColor: "rgba(59, 130, 246, 0.15)",
+			color: theme.colors.primary,
+			bgColor: `${theme.colors.primary}26`,
 		};
 	}
 	if (factor >= 2) {
 		return {
 			label: `${factor.toFixed(1)}x faster`,
-			color: "#8b5cf6",
-			bgColor: "rgba(139, 92, 246, 0.15)",
+			color: theme.colors.purple,
+			bgColor: `${theme.colors.purple}26`,
 		};
 	}
 	return {
 		label: `${factor.toFixed(1)}x faster`,
-		color: "#f59e0b",
-		bgColor: "rgba(245, 158, 11, 0.15)",
+		color: theme.colors.warning,
+		bgColor: `${theme.colors.warning}26`,
 	};
 }
 
@@ -101,10 +101,7 @@ export function HumanTimeCard({
 
 	const maxBreakdownSecs = useMemo(
 		() =>
-			Math.max(
-				...humanTimeEstimate.breakdown.map((b) => b.humanSeconds),
-				1,
-			),
+			Math.max(...humanTimeEstimate.breakdown.map((b) => b.humanSeconds), 1),
 		[humanTimeEstimate.breakdown],
 	);
 
@@ -179,7 +176,7 @@ export function HumanTimeCard({
 						style={{
 							width: `${Math.max((humanTimeEstimate.totalAiSeconds / humanTimeEstimate.totalHumanSeconds) * 100, 2)}%`,
 							height: "100%",
-							backgroundColor: "#10b981",
+							backgroundColor: theme.colors.success,
 						}}
 					/>
 					{/* Human portion - the rest */}
@@ -187,15 +184,15 @@ export function HumanTimeCard({
 						style={{
 							flex: 1,
 							height: "100%",
-							backgroundColor: "#f59e0b",
+							backgroundColor: theme.colors.warning,
 						}}
 					/>
 				</Box>
 				<HStack justify="space-between" align="center">
-					<Text size="xs" style={{ color: "#10b981" }}>
+					<Text size="xs" style={{ color: theme.colors.success }}>
 						{formatDuration(Math.round(humanTimeEstimate.totalAiSeconds))}
 					</Text>
-					<Text size="xs" style={{ color: "#f59e0b" }}>
+					<Text size="xs" style={{ color: theme.colors.warning }}>
 						{formatDuration(Math.round(humanTimeEstimate.totalHumanSeconds))}
 					</Text>
 				</HStack>
@@ -216,7 +213,10 @@ export function HumanTimeCard({
 						Speedup Factor
 					</Text>
 					<Text weight="semibold" size="lg">
-						{humanTimeEstimate.speedupFactor}x
+						{humanTimeEstimate.speedupFactor >= 10
+							? Math.round(humanTimeEstimate.speedupFactor)
+							: humanTimeEstimate.speedupFactor.toFixed(1)}
+						x
 					</Text>
 				</VStack>
 			</HStack>
@@ -233,11 +233,7 @@ export function HumanTimeCard({
 						align="center"
 						style={{ width: "100%" }}
 					>
-						<Text
-							size="xs"
-							color="muted"
-							style={{ width: 130, flexShrink: 0 }}
-						>
+						<Text size="xs" color="muted" style={{ width: 130, flexShrink: 0 }}>
 							{entry.category}
 						</Text>
 						<Box
@@ -254,7 +250,7 @@ export function HumanTimeCard({
 									width: `${Math.max((entry.humanSeconds / maxBreakdownSecs) * 100, entry.humanSeconds > 0 ? 2 : 0)}%`,
 									height: "100%",
 									backgroundColor:
-										CATEGORY_COLORS[entry.category] ?? "#6b7280",
+										CATEGORY_COLORS[entry.category] ?? theme.colors.text.muted,
 									borderRadius: theme.radii.sm,
 								}}
 							/>
@@ -286,7 +282,7 @@ export function HumanTimeCard({
 							<Text
 								size="xs"
 								color="muted"
-								style={{ width: 60, flexShrink: 0 }}
+								style={{ width: 95, flexShrink: 0 }}
 							>
 								{tool.toolName}
 							</Text>
@@ -303,7 +299,7 @@ export function HumanTimeCard({
 									style={{
 										width: `${Math.max((tool.humanSeconds / maxToolSecs) * 100, tool.humanSeconds > 0 ? 2 : 0)}%`,
 										height: "100%",
-										backgroundColor: "#6366f1",
+										backgroundColor: theme.colors.primary,
 										borderRadius: theme.radii.sm,
 									}}
 								/>
@@ -313,7 +309,8 @@ export function HumanTimeCard({
 								color="muted"
 								style={{ width: 80, textAlign: "right" }}
 							>
-								{tool.invocations}x = {formatDuration(Math.round(tool.humanSeconds))}
+								{tool.invocations}x ={" "}
+								{formatDuration(Math.round(tool.humanSeconds))}
 							</Text>
 						</HStack>
 					))}
@@ -324,14 +321,16 @@ export function HumanTimeCard({
 			<Box
 				style={{
 					padding: theme.spacing.sm,
-					backgroundColor: "rgba(16, 185, 129, 0.1)",
-					borderRadius: theme.borderRadius.md,
+					backgroundColor: `${theme.colors.success}1A`,
+					borderRadius: theme.radii.md,
 					borderLeftWidth: 3,
-					borderLeftColor: "#10b981",
+					borderLeftColor: theme.colors.success,
 				}}
 			>
 				<Text size="xs" color="muted">
-					Estimates based on human benchmarks: 250 WPM reading, 40 WPM typing, 30-60s per tool operation, 2min per decision point
+					Estimates based on human benchmarks: 250 WPM reading, 40 WPM typing,
+					30-60s per tool operation, 5-120s per decision (scaled by prompt
+					length)
 				</Text>
 			</Box>
 		</VStack>

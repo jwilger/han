@@ -84,10 +84,11 @@ pub async fn check_indexer_version(db: &DatabaseConnection) -> ProcessorResult<b
         .map_err(|e| ProcessorError::Other(e.to_string()))?;
 
     // Update stored version
-    db.execute_unprepared(&format!(
+    db.execute(Statement::from_sql_and_values(
+        DbBackend::Sqlite,
         "INSERT OR REPLACE INTO han_metadata (key, value, updated_at) \
-         VALUES ('indexer_version', '{}', datetime('now'))",
-        INDEXER_VERSION
+         VALUES ('indexer_version', $1, datetime('now'))",
+        vec![INDEXER_VERSION.into()],
     ))
     .await
     .map_err(|e| ProcessorError::Other(e.to_string()))?;
@@ -496,7 +497,7 @@ fn extract_line_changes(json: &Value) -> (Option<i32>, Option<i32>, Option<i32>)
 
 /// Indexer version — bump this to trigger automatic re-indexing of all sessions.
 /// The coordinator checks this against `han_metadata.indexer_version` at startup.
-pub const INDEXER_VERSION: &str = "1";
+pub const INDEXER_VERSION: &str = "2";
 
 /// Estimate human-equivalent time in milliseconds for a single message.
 ///
@@ -525,8 +526,12 @@ pub fn estimate_human_time_ms(parsed: &ParsedMessage) -> Option<i32> {
             if ms > 0.0 { Some(ms as i32) } else { None }
         }
         MessageType::User => {
-            // Each user turn = 120s of thinking/deciding next step
-            Some(120_000) // 120s in ms
+            // Scale by content length: short confirmations ("y", "ok") get less time,
+            // longer prompts with context get more. Clamp between 5s and 120s.
+            let content_len = parsed.content.as_ref().map(|c| c.len()).unwrap_or(0);
+            // ~0.5s per character, clamped
+            let secs = (content_len as f64 * 0.5).clamp(5.0, 120.0);
+            Some((secs * 1000.0) as i32)
         }
         MessageType::ToolUse => {
             // Per-tool navigation/execution overhead

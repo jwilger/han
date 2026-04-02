@@ -18,11 +18,15 @@ import type { GraphQLSubscriptionConfig } from "relay-runtime";
 import { theme } from "@/components/atoms";
 import { Badge } from "@/components/atoms/Badge.tsx";
 import { Box } from "@/components/atoms/Box.tsx";
+import { Center } from "@/components/atoms/Center.tsx";
 import { Heading } from "@/components/atoms/Heading.tsx";
 import { HStack } from "@/components/atoms/HStack.tsx";
 import { Text } from "@/components/atoms/Text.tsx";
 import { VStack } from "@/components/atoms/VStack.tsx";
 import { SessionListItem } from "@/components/organisms/SessionListItem.tsx";
+import { PluginItem } from "../ProjectDetailPage/PluginItem.tsx";
+import type { Plugin } from "../ProjectDetailPage/types.ts";
+import { WorktreeItem } from "../ProjectDetailPage/WorktreeItem.tsx";
 import type { DashboardContentSubscription } from "./__generated__/DashboardContentSubscription.graphql.ts";
 import type { DashboardPageActivity_query$key } from "./__generated__/DashboardPageActivity_query.graphql.ts";
 import type { DashboardPageAnalytics_query$key } from "./__generated__/DashboardPageAnalytics_query.graphql.ts";
@@ -50,10 +54,6 @@ import { PerformanceTrendChart } from "./PerformanceTrendChart.tsx";
 import { SessionEffectivenessCard } from "./SessionEffectivenessCard.tsx";
 import { SubagentUsageChart } from "./SubagentUsageChart.tsx";
 import { TimeOfDayChart } from "./TimeOfDayChart.tsx";
-
-import { PluginItem } from "../ProjectDetailPage/PluginItem.tsx";
-import type { Plugin } from "../ProjectDetailPage/types.ts";
-import { WorktreeItem } from "../ProjectDetailPage/WorktreeItem.tsx";
 import { ToolUsageChart } from "./ToolUsageChart.tsx";
 
 /**
@@ -303,25 +303,23 @@ export function DashboardContent({
 		humanTimeEstimate: {
 			totalHumanSeconds:
 				rawAnalytics?.humanTimeEstimate?.totalHumanSeconds ?? 0,
-			totalAiSeconds:
-				rawAnalytics?.humanTimeEstimate?.totalAiSeconds ?? 0,
-			speedupFactor:
-				rawAnalytics?.humanTimeEstimate?.speedupFactor ?? 0,
+			totalAiSeconds: rawAnalytics?.humanTimeEstimate?.totalAiSeconds ?? 0,
+			speedupFactor: rawAnalytics?.humanTimeEstimate?.speedupFactor ?? 0,
 			hoursSaved: rawAnalytics?.humanTimeEstimate?.hoursSaved ?? 0,
-			breakdown: (
-				rawAnalytics?.humanTimeEstimate?.breakdown ?? []
-			).map((b) => ({
-				category: b?.category ?? "",
-				humanSeconds: b?.humanSeconds ?? 0,
-				percent: b?.percent ?? 0,
-			})),
-			toolBreakdown: (
-				rawAnalytics?.humanTimeEstimate?.toolBreakdown ?? []
-			).map((t) => ({
-				toolName: t?.toolName ?? "",
-				invocations: t?.invocations ?? 0,
-				humanSeconds: t?.humanSeconds ?? 0,
-			})),
+			breakdown: (rawAnalytics?.humanTimeEstimate?.breakdown ?? []).map(
+				(b) => ({
+					category: b?.category ?? "",
+					humanSeconds: b?.humanSeconds ?? 0,
+					percent: b?.percent ?? 0,
+				}),
+			),
+			toolBreakdown: (rawAnalytics?.humanTimeEstimate?.toolBreakdown ?? []).map(
+				(t) => ({
+					toolName: t?.toolName ?? "",
+					invocations: t?.invocations ?? 0,
+					humanSeconds: t?.humanSeconds ?? 0,
+				}),
+			),
 		},
 		costAnalysis: {
 			estimatedCostUsd: rawAnalytics?.costAnalysis?.estimatedCostUsd ?? 0,
@@ -706,20 +704,11 @@ export function DashboardContent({
 			{/* Human Time Estimation - full width */}
 			<SectionCard title="Human Time Estimation (30 days)">
 				{analyticsLoaded ? (
-					<HumanTimeCard
-						humanTimeEstimate={analytics.humanTimeEstimate}
-					/>
+					<HumanTimeCard humanTimeEstimate={analytics.humanTimeEstimate} />
 				) : (
-					<Box
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							minHeight: "120px",
-						}}
-					>
+					<Center style={{ minHeight: 120 }}>
 						<Text color="muted">Loading time estimation...</Text>
-					</Box>
+					</Center>
 				)}
 			</SectionCard>
 

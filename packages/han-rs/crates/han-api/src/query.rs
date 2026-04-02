@@ -2275,62 +2275,88 @@ impl QueryRoot {
         }
 
         // Query 1: Total human time and AI wall-clock duration
+        // AI duration = SUM of per-session durations (max - min timestamp within each session),
+        // NOT the span from oldest to newest message across all sessions (which would be ~30 days).
         let (ht_total_sql, ht_total_values) = if let Some((ref sc, ref sv)) = scope {
             (
                 format!(
                     "SELECT \
                      COALESCE(SUM(human_time_ms), 0) as total_human_ms, \
-                     COALESCE((julianday(MAX(timestamp)) - julianday(MIN(timestamp))) * 86400.0, 0.0) as ai_duration_seconds \
+                     COALESCE(( \
+                       SELECT SUM(session_dur) FROM ( \
+                         SELECT (julianday(MAX(timestamp)) - julianday(MIN(timestamp))) * 86400.0 as session_dur \
+                         FROM messages \
+                         WHERE timestamp >= date('now', ? || ' days') AND {sc} \
+                         GROUP BY session_id \
+                         HAVING COUNT(*) > 1 \
+                       ) \
+                     ), 0.0) as ai_duration_seconds \
                      FROM messages \
                      WHERE timestamp >= date('now', ? || ' days') AND {sc}"
                 ),
-                vec![format!("-{days}").into(), sv.clone()],
+                vec![format!("-{days}").into(), sv.clone(), format!("-{days}").into(), sv.clone()],
             )
         } else {
             (
                 "SELECT \
                  COALESCE(SUM(human_time_ms), 0) as total_human_ms, \
-                 COALESCE((julianday(MAX(timestamp)) - julianday(MIN(timestamp))) * 86400.0, 0.0) as ai_duration_seconds \
+                 COALESCE(( \
+                   SELECT SUM(session_dur) FROM ( \
+                     SELECT (julianday(MAX(timestamp)) - julianday(MIN(timestamp))) * 86400.0 as session_dur \
+                     FROM messages \
+                     WHERE timestamp >= date('now', ? || ' days') \
+                     GROUP BY session_id \
+                     HAVING COUNT(*) > 1 \
+                   ) \
+                 ), 0.0) as ai_duration_seconds \
                  FROM messages \
                  WHERE timestamp >= date('now', ? || ' days')"
                     .to_string(),
-                vec![format!("-{days}").into()],
+                vec![format!("-{days}").into(), format!("-{days}").into()],
             )
         };
 
-        // Query 2: Breakdown by message_type category
+        // Query 2: Breakdown by category
+        // Split assistant messages into "Reading AI Output" (token-based) and "Writing Code" (lines-based)
+        // using UNION ALL to compute each sub-category from the raw columns.
+        let cat_core = |where_clause: &str| format!(
+            "SELECT 'Reading AI Output' as category, \
+               COALESCE(SUM(CAST(output_tokens AS BIGINT) * 320), 0) as category_ms \
+             FROM messages WHERE message_type = 'assistant' AND output_tokens IS NOT NULL AND {where_clause} \
+             UNION ALL \
+             SELECT 'Writing Code' as category, \
+               COALESCE(SUM(CAST(lines_added AS BIGINT) * 12000), 0) as category_ms \
+             FROM messages WHERE message_type = 'assistant' AND lines_added IS NOT NULL AND lines_added > 0 AND {where_clause} \
+             UNION ALL \
+             SELECT 'Thinking & Deciding' as category, \
+               COALESCE(SUM(human_time_ms), 0) as category_ms \
+             FROM messages WHERE message_type = 'user' AND human_time_ms IS NOT NULL AND {where_clause} \
+             UNION ALL \
+             SELECT 'Navigation & Tools' as category, \
+               COALESCE(SUM(human_time_ms), 0) as category_ms \
+             FROM messages WHERE message_type = 'tool_use' AND human_time_ms IS NOT NULL AND {where_clause}"
+        );
         let (ht_cat_sql, ht_cat_values) = if let Some((ref sc, ref sv)) = scope {
+            let w = format!("timestamp >= date('now', ? || ' days') AND {sc}");
             (
-                format!(
-                    "SELECT \
-                     CASE \
-                       WHEN message_type = 'assistant' THEN 'Reading AI Output' \
-                       WHEN message_type = 'user' THEN 'Thinking & Deciding' \
-                       WHEN message_type = 'tool_use' THEN 'Navigation & Tools' \
-                       ELSE 'Other' \
-                     END as category, \
-                     COALESCE(SUM(human_time_ms), 0) as category_ms \
-                     FROM messages \
-                     WHERE human_time_ms IS NOT NULL AND timestamp >= date('now', ? || ' days') AND {sc} \
-                     GROUP BY category"
-                ),
-                vec![format!("-{days}").into(), sv.clone()],
+                cat_core(&w),
+                vec![
+                    format!("-{days}").into(), sv.clone(),
+                    format!("-{days}").into(), sv.clone(),
+                    format!("-{days}").into(), sv.clone(),
+                    format!("-{days}").into(), sv.clone(),
+                ],
             )
         } else {
+            let w = "timestamp >= date('now', ? || ' days')";
             (
-                "SELECT \
-                 CASE \
-                   WHEN message_type = 'assistant' THEN 'Reading AI Output' \
-                   WHEN message_type = 'user' THEN 'Thinking & Deciding' \
-                   WHEN message_type = 'tool_use' THEN 'Navigation & Tools' \
-                   ELSE 'Other' \
-                 END as category, \
-                 COALESCE(SUM(human_time_ms), 0) as category_ms \
-                 FROM messages \
-                 WHERE human_time_ms IS NOT NULL AND timestamp >= date('now', ? || ' days') \
-                 GROUP BY category"
-                    .to_string(),
-                vec![format!("-{days}").into()],
+                cat_core(w),
+                vec![
+                    format!("-{days}").into(),
+                    format!("-{days}").into(),
+                    format!("-{days}").into(),
+                    format!("-{days}").into(),
+                ],
             )
         };
 
@@ -2345,7 +2371,7 @@ impl QueryRoot {
                      FROM messages \
                      WHERE message_type = 'tool_use' AND human_time_ms IS NOT NULL \
                        AND timestamp >= date('now', ? || ' days') AND {sc} \
-                     GROUP BY tool_name ORDER BY tool_ms DESC"
+                     GROUP BY tool_name ORDER BY tool_ms DESC LIMIT 15"
                 ),
                 vec![format!("-{days}").into(), sv.clone()],
             )
@@ -2358,7 +2384,7 @@ impl QueryRoot {
                  FROM messages \
                  WHERE message_type = 'tool_use' AND human_time_ms IS NOT NULL \
                    AND timestamp >= date('now', ? || ' days') \
-                 GROUP BY tool_name ORDER BY tool_ms DESC"
+                 GROUP BY tool_name ORDER BY tool_ms DESC LIMIT 15"
                     .to_string(),
                 vec![format!("-{days}").into()],
             )
@@ -2423,7 +2449,7 @@ impl QueryRoot {
                 .filter(|r| r.tool_ms > 0)
                 .map(|r| ToolTimeEstimate {
                     tool_name: Some(r.tool_name.clone()),
-                    invocations: Some(r.invocations as i32),
+                    invocations: Some(i32::try_from(r.invocations).unwrap_or(i32::MAX)),
                     human_seconds: Some((r.tool_ms as f64 / 1000.0 * 10.0).round() / 10.0),
                 })
                 .collect();
