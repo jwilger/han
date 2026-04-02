@@ -160,10 +160,8 @@ export function HumanTimeCard({
 						Human (estimated)
 					</Text>
 				</HStack>
-				<Box
+				<HStack
 					style={{
-						display: "flex",
-						flexDirection: "row",
 						height: 12,
 						borderRadius: theme.radii.md,
 						overflow: "hidden",
@@ -187,7 +185,7 @@ export function HumanTimeCard({
 							backgroundColor: theme.colors.warning,
 						}}
 					/>
-				</Box>
+				</HStack>
 				<HStack justify="space-between" align="center">
 					<Text size="xs" style={{ color: theme.colors.success }}>
 						{formatDuration(Math.round(humanTimeEstimate.totalAiSeconds))}
