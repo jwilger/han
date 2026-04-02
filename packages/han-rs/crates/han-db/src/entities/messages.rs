@@ -37,6 +37,7 @@ pub struct Model {
     pub lines_added: Option<i32>,
     pub lines_removed: Option<i32>,
     pub files_changed: Option<i32>,
+    pub human_time_ms: Option<i32>,
     pub indexed_at: Option<String>,
 }
 

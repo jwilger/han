@@ -357,6 +357,7 @@ async fn test_messages_crud() {
             lines_added: Set(None),
             lines_removed: Set(None),
             files_changed: Set(None),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
         msg_entity::ActiveModel {
@@ -386,6 +387,7 @@ async fn test_messages_crud() {
             lines_added: Set(None),
             lines_removed: Set(None),
             files_changed: Set(None),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
         msg_entity::ActiveModel {
@@ -415,6 +417,7 @@ async fn test_messages_crud() {
             lines_added: Set(Some(5)),
             lines_removed: Set(Some(3)),
             files_changed: Set(Some(1)),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
     ];
@@ -933,6 +936,7 @@ async fn test_fts5_search_messages() {
             lines_added: Set(None),
             lines_removed: Set(None),
             files_changed: Set(None),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
         msg_entity::ActiveModel {
@@ -962,6 +966,7 @@ async fn test_fts5_search_messages() {
             lines_added: Set(None),
             lines_removed: Set(None),
             files_changed: Set(None),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
     ];
@@ -1062,6 +1067,7 @@ async fn test_dashboard_aggregates() {
             lines_added: Set(None),
             lines_removed: Set(None),
             files_changed: Set(None),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
         msg_entity::ActiveModel {
@@ -1091,6 +1097,7 @@ async fn test_dashboard_aggregates() {
             lines_added: Set(None),
             lines_removed: Set(None),
             files_changed: Set(None),
+            human_time_ms: Set(None),
             indexed_at: Set(None),
         },
     ];
@@ -1166,6 +1173,7 @@ async fn test_activity_aggregates() {
         lines_added: Set(Some(10)),
         lines_removed: Set(Some(3)),
         files_changed: Set(Some(2)),
+        human_time_ms: Set(None),
         indexed_at: Set(None),
     }];
 

@@ -26,8 +26,9 @@ use crate::types::config_dir::ConfigDir;
 use crate::types::dashboard::{
     estimate_cost_for_model, estimate_cost_usd, model_display_name, ActivityData,
     CoordinatorStatus, CostAnalysis, DailyActivity, DailyCost, DailyModelTokens,
-    DashboardAnalytics, HookHealthStats, HourlyActivity, ModelTokenEntry, ModelUsageStats,
-    SessionCost, SessionPerformancePoint, StatsCache, TokenUsageStats, ToolUsageStats, WeeklyCost,
+    DashboardAnalytics, HookHealthStats, HourlyActivity, HumanTimeBreakdown, HumanTimeEstimate,
+    ModelTokenEntry, ModelUsageStats, SessionCost, SessionPerformancePoint, StatsCache,
+    TokenUsageStats, ToolTimeEstimate, ToolUsageStats, WeeklyCost,
 };
 use crate::types::enums::MetricsPeriod;
 use crate::types::metrics::{MetricsData, TaskOutcomeCount, TaskTypeCount};
@@ -2247,6 +2248,222 @@ impl QueryRoot {
                 .collect::<Vec<_>>()
         };
 
+        // ====================================================================
+        // Phase 6: Human Time Estimation (from pre-computed human_time_ms)
+        // ====================================================================
+        //
+        // human_time_ms is computed per-message at index time by the indexer.
+        // Here we aggregate via SUM and group for breakdowns.
+
+        #[derive(Debug, FromQueryResult)]
+        struct HumanTimeTotalRow {
+            total_human_ms: i64,
+            ai_duration_seconds: f64,
+        }
+
+        #[derive(Debug, FromQueryResult)]
+        struct HumanTimeByTypeRow {
+            category: String,
+            category_ms: i64,
+        }
+
+        #[derive(Debug, FromQueryResult)]
+        struct HumanTimeByToolRow {
+            tool_name: String,
+            invocations: i64,
+            tool_ms: i64,
+        }
+
+        // Query 1: Total human time and AI wall-clock duration
+        // AI duration = SUM of per-session durations (max - min timestamp within each session),
+        // NOT the span from oldest to newest message across all sessions (which would be ~30 days).
+        let (ht_total_sql, ht_total_values) = if let Some((ref sc, ref sv)) = scope {
+            (
+                format!(
+                    "SELECT \
+                     COALESCE(SUM(human_time_ms), 0) as total_human_ms, \
+                     COALESCE(( \
+                       SELECT SUM(session_dur) FROM ( \
+                         SELECT (julianday(MAX(timestamp)) - julianday(MIN(timestamp))) * 86400.0 as session_dur \
+                         FROM messages \
+                         WHERE timestamp >= date('now', ? || ' days') AND {sc} \
+                         GROUP BY session_id \
+                         HAVING COUNT(*) > 1 \
+                       ) \
+                     ), 0.0) as ai_duration_seconds \
+                     FROM messages \
+                     WHERE timestamp >= date('now', ? || ' days') AND {sc}"
+                ),
+                vec![format!("-{days}").into(), sv.clone(), format!("-{days}").into(), sv.clone()],
+            )
+        } else {
+            (
+                "SELECT \
+                 COALESCE(SUM(human_time_ms), 0) as total_human_ms, \
+                 COALESCE(( \
+                   SELECT SUM(session_dur) FROM ( \
+                     SELECT (julianday(MAX(timestamp)) - julianday(MIN(timestamp))) * 86400.0 as session_dur \
+                     FROM messages \
+                     WHERE timestamp >= date('now', ? || ' days') \
+                     GROUP BY session_id \
+                     HAVING COUNT(*) > 1 \
+                   ) \
+                 ), 0.0) as ai_duration_seconds \
+                 FROM messages \
+                 WHERE timestamp >= date('now', ? || ' days')"
+                    .to_string(),
+                vec![format!("-{days}").into(), format!("-{days}").into()],
+            )
+        };
+
+        // Query 2: Breakdown by category
+        // Split assistant messages into "Reading AI Output" (token-based) and "Writing Code" (lines-based)
+        // using UNION ALL to compute each sub-category from the raw columns.
+        let cat_core = |where_clause: &str| format!(
+            "SELECT 'Reading AI Output' as category, \
+               COALESCE(SUM(CAST(output_tokens AS BIGINT) * 320), 0) as category_ms \
+             FROM messages WHERE message_type = 'assistant' AND output_tokens IS NOT NULL AND {where_clause} \
+             UNION ALL \
+             SELECT 'Writing Code' as category, \
+               COALESCE(SUM(CAST(lines_added AS BIGINT) * 12000), 0) as category_ms \
+             FROM messages WHERE message_type = 'assistant' AND lines_added IS NOT NULL AND lines_added > 0 AND {where_clause} \
+             UNION ALL \
+             SELECT 'Thinking & Deciding' as category, \
+               COALESCE(SUM(human_time_ms), 0) as category_ms \
+             FROM messages WHERE message_type = 'user' AND human_time_ms IS NOT NULL AND {where_clause} \
+             UNION ALL \
+             SELECT 'Navigation & Tools' as category, \
+               COALESCE(SUM(human_time_ms), 0) as category_ms \
+             FROM messages WHERE message_type = 'tool_use' AND human_time_ms IS NOT NULL AND {where_clause}"
+        );
+        let (ht_cat_sql, ht_cat_values) = if let Some((ref sc, ref sv)) = scope {
+            let w = format!("timestamp >= date('now', ? || ' days') AND {sc}");
+            (
+                cat_core(&w),
+                vec![
+                    format!("-{days}").into(), sv.clone(),
+                    format!("-{days}").into(), sv.clone(),
+                    format!("-{days}").into(), sv.clone(),
+                    format!("-{days}").into(), sv.clone(),
+                ],
+            )
+        } else {
+            let w = "timestamp >= date('now', ? || ' days')";
+            (
+                cat_core(w),
+                vec![
+                    format!("-{days}").into(),
+                    format!("-{days}").into(),
+                    format!("-{days}").into(),
+                    format!("-{days}").into(),
+                ],
+            )
+        };
+
+        // Query 3: Per-tool breakdown for tool_use messages
+        let (ht_tool_sql, ht_tool_values) = if let Some((ref sc, ref sv)) = scope {
+            (
+                format!(
+                    "SELECT \
+                     COALESCE(tool_name, 'Unknown') as tool_name, \
+                     COUNT(*) as invocations, \
+                     COALESCE(SUM(human_time_ms), 0) as tool_ms \
+                     FROM messages \
+                     WHERE message_type = 'tool_use' AND human_time_ms IS NOT NULL \
+                       AND timestamp >= date('now', ? || ' days') AND {sc} \
+                     GROUP BY tool_name ORDER BY tool_ms DESC LIMIT 15"
+                ),
+                vec![format!("-{days}").into(), sv.clone()],
+            )
+        } else {
+            (
+                "SELECT \
+                 COALESCE(tool_name, 'Unknown') as tool_name, \
+                 COUNT(*) as invocations, \
+                 COALESCE(SUM(human_time_ms), 0) as tool_ms \
+                 FROM messages \
+                 WHERE message_type = 'tool_use' AND human_time_ms IS NOT NULL \
+                   AND timestamp >= date('now', ? || ' days') \
+                 GROUP BY tool_name ORDER BY tool_ms DESC LIMIT 15"
+                    .to_string(),
+                vec![format!("-{days}").into()],
+            )
+        };
+
+        let total_row = HumanTimeTotalRow::find_by_statement(Statement::from_sql_and_values(
+            DbBackend::Sqlite,
+            ht_total_sql,
+            ht_total_values,
+        ))
+        .one(db)
+        .await
+        .unwrap_or(None);
+
+        let cat_rows = HumanTimeByTypeRow::find_by_statement(Statement::from_sql_and_values(
+            DbBackend::Sqlite,
+            ht_cat_sql,
+            ht_cat_values,
+        ))
+        .all(db)
+        .await
+        .unwrap_or_default();
+
+        let tool_rows = HumanTimeByToolRow::find_by_statement(Statement::from_sql_and_values(
+            DbBackend::Sqlite,
+            ht_tool_sql,
+            ht_tool_values,
+        ))
+        .all(db)
+        .await
+        .unwrap_or_default();
+
+        let human_time_estimate = total_row.map(|row| {
+            let total_human_secs = row.total_human_ms as f64 / 1000.0;
+            let ai_secs = row.ai_duration_seconds;
+            let speedup = if ai_secs > 0.0 {
+                total_human_secs / ai_secs
+            } else {
+                0.0
+            };
+            let hours_saved = ((total_human_secs - ai_secs) / 3600.0).max(0.0);
+
+            let breakdown: Vec<HumanTimeBreakdown> = cat_rows
+                .iter()
+                .filter(|r| r.category_ms > 0)
+                .map(|r| {
+                    let secs = r.category_ms as f64 / 1000.0;
+                    HumanTimeBreakdown {
+                        category: Some(r.category.clone()),
+                        human_seconds: Some((secs * 10.0).round() / 10.0),
+                        percent: Some(if total_human_secs > 0.0 {
+                            (secs / total_human_secs * 100.0).round()
+                        } else {
+                            0.0
+                        }),
+                    }
+                })
+                .collect();
+
+            let tool_breakdown: Vec<ToolTimeEstimate> = tool_rows
+                .iter()
+                .filter(|r| r.tool_ms > 0)
+                .map(|r| ToolTimeEstimate {
+                    tool_name: Some(r.tool_name.clone()),
+                    invocations: Some(i32::try_from(r.invocations).unwrap_or(i32::MAX)),
+                    human_seconds: Some((r.tool_ms as f64 / 1000.0 * 10.0).round() / 10.0),
+                })
+                .collect();
+
+            HumanTimeEstimate {
+                total_human_seconds: Some((total_human_secs * 10.0).round() / 10.0),
+                total_ai_seconds: Some((ai_secs * 10.0).round() / 10.0),
+                speedup_factor: Some((speedup * 10.0).round() / 10.0),
+                hours_saved: Some((hours_saved * 100.0).round() / 100.0),
+                breakdown: Some(breakdown),
+                tool_breakdown: Some(tool_breakdown),
+            }
+        });
+
         let result = DashboardAnalytics {
             top_sessions: Some(top_sessions),
             bottom_sessions: Some(bottom_sessions),
@@ -2256,6 +2473,7 @@ impl QueryRoot {
             subagent_usage: Some(subagent_usage),
             tool_usage: Some(tool_usage),
             performance_trend: Some(performance_trend),
+            human_time_estimate,
         };
 
         // Cache the result for 30 seconds

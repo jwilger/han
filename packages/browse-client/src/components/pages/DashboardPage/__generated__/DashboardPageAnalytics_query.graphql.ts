@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<35fc5dcdba303dc5dec795b41e2535b0>>
+ * @generated SignedSource<<fa7aec1a77d2a8bc4a33325283f84adf>>
  * @lightSyntaxTransform
  * @nogrep
  */
@@ -130,6 +130,22 @@ export type DashboardPageAnalytics_query$data = {
       readonly passRate: number | null | undefined;
       readonly totalRuns: number | null | undefined;
     }> | null | undefined;
+    readonly humanTimeEstimate: {
+      readonly breakdown: ReadonlyArray<{
+        readonly category: string | null | undefined;
+        readonly humanSeconds: number | null | undefined;
+        readonly percent: number | null | undefined;
+      }> | null | undefined;
+      readonly hoursSaved: number | null | undefined;
+      readonly speedupFactor: number | null | undefined;
+      readonly toolBreakdown: ReadonlyArray<{
+        readonly humanSeconds: number | null | undefined;
+        readonly invocations: number | null | undefined;
+        readonly toolName: string | null | undefined;
+      }> | null | undefined;
+      readonly totalAiSeconds: number | null | undefined;
+      readonly totalHumanSeconds: number | null | undefined;
+    } | null | undefined;
     readonly performanceTrend: ReadonlyArray<{
       readonly avgCompactions: number | null | undefined;
       readonly avgEffectiveness: number | null | undefined;
@@ -261,59 +277,73 @@ v5 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "weekStart",
+  "name": "toolName",
   "storageKey": null
 },
 v6 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "weekLabel",
+  "name": "weekStart",
   "storageKey": null
 },
 v7 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "sessionCount",
+  "name": "weekLabel",
   "storageKey": null
 },
 v8 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "estimatedCostUsd",
+  "name": "sessionCount",
   "storageKey": null
 },
 v9 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "isEstimated",
+  "name": "humanSeconds",
   "storageKey": null
 },
 v10 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "cacheSavingsUsd",
+  "name": "estimatedCostUsd",
   "storageKey": null
 },
 v11 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "costUtilizationPercent",
+  "name": "isEstimated",
   "storageKey": null
 },
 v12 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
-  "name": "costUsd",
+  "name": "cacheSavingsUsd",
   "storageKey": null
 },
 v13 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "costUtilizationPercent",
+  "storageKey": null
+},
+v14 = {
+  "alias": null,
+  "args": null,
+  "kind": "ScalarField",
+  "name": "costUsd",
+  "storageKey": null
+},
+v15 = {
   "alias": null,
   "args": null,
   "concreteType": "DailyCost",
@@ -328,12 +358,12 @@ v13 = {
       "name": "date",
       "storageKey": null
     },
-    (v12/*: any*/),
-    (v7/*: any*/)
+    (v14/*: any*/),
+    (v8/*: any*/)
   ],
   "storageKey": null
 },
-v14 = {
+v16 = {
   "alias": null,
   "args": null,
   "concreteType": "WeeklyCost",
@@ -341,10 +371,10 @@ v14 = {
   "name": "weeklyCostTrend",
   "plural": true,
   "selections": [
-    (v5/*: any*/),
     (v6/*: any*/),
-    (v12/*: any*/),
     (v7/*: any*/),
+    (v14/*: any*/),
+    (v8/*: any*/),
     {
       "alias": null,
       "args": null,
@@ -355,7 +385,7 @@ v14 = {
   ],
   "storageKey": null
 },
-v15 = {
+v17 = {
   "alias": null,
   "args": null,
   "concreteType": "SessionCost",
@@ -365,7 +395,7 @@ v15 = {
   "selections": [
     (v1/*: any*/),
     (v2/*: any*/),
-    (v12/*: any*/),
+    (v14/*: any*/),
     {
       "alias": null,
       "args": null,
@@ -398,28 +428,28 @@ v15 = {
   ],
   "storageKey": null
 },
-v16 = {
+v18 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "costPerSession",
   "storageKey": null
 },
-v17 = {
+v19 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "cacheHitRate",
   "storageKey": null
 },
-v18 = {
+v20 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
   "name": "potentialSavingsUsd",
   "storageKey": null
 },
-v19 = {
+v21 = {
   "alias": null,
   "args": null,
   "concreteType": "SubscriptionComparison",
@@ -472,7 +502,7 @@ v19 = {
   ],
   "storageKey": null
 },
-v20 = {
+v22 = {
   "alias": null,
   "args": null,
   "kind": "ScalarField",
@@ -627,13 +657,7 @@ return {
           "name": "toolUsage",
           "plural": true,
           "selections": [
-            {
-              "alias": null,
-              "args": null,
-              "kind": "ScalarField",
-              "name": "toolName",
-              "storageKey": null
-            },
+            (v5/*: any*/),
             (v0/*: any*/)
           ],
           "storageKey": null
@@ -699,9 +723,9 @@ return {
           "name": "performanceTrend",
           "plural": true,
           "selections": [
-            (v5/*: any*/),
             (v6/*: any*/),
             (v7/*: any*/),
+            (v8/*: any*/),
             {
               "alias": null,
               "args": null,
@@ -729,13 +753,98 @@ return {
         {
           "alias": null,
           "args": null,
+          "concreteType": "HumanTimeEstimate",
+          "kind": "LinkedField",
+          "name": "humanTimeEstimate",
+          "plural": false,
+          "selections": [
+            {
+              "alias": null,
+              "args": null,
+              "kind": "ScalarField",
+              "name": "totalHumanSeconds",
+              "storageKey": null
+            },
+            {
+              "alias": null,
+              "args": null,
+              "kind": "ScalarField",
+              "name": "totalAiSeconds",
+              "storageKey": null
+            },
+            {
+              "alias": null,
+              "args": null,
+              "kind": "ScalarField",
+              "name": "speedupFactor",
+              "storageKey": null
+            },
+            {
+              "alias": null,
+              "args": null,
+              "kind": "ScalarField",
+              "name": "hoursSaved",
+              "storageKey": null
+            },
+            {
+              "alias": null,
+              "args": null,
+              "concreteType": "HumanTimeBreakdown",
+              "kind": "LinkedField",
+              "name": "breakdown",
+              "plural": true,
+              "selections": [
+                {
+                  "alias": null,
+                  "args": null,
+                  "kind": "ScalarField",
+                  "name": "category",
+                  "storageKey": null
+                },
+                (v9/*: any*/),
+                {
+                  "alias": null,
+                  "args": null,
+                  "kind": "ScalarField",
+                  "name": "percent",
+                  "storageKey": null
+                }
+              ],
+              "storageKey": null
+            },
+            {
+              "alias": null,
+              "args": null,
+              "concreteType": "ToolTimeEstimate",
+              "kind": "LinkedField",
+              "name": "toolBreakdown",
+              "plural": true,
+              "selections": [
+                (v5/*: any*/),
+                {
+                  "alias": null,
+                  "args": null,
+                  "kind": "ScalarField",
+                  "name": "invocations",
+                  "storageKey": null
+                },
+                (v9/*: any*/)
+              ],
+              "storageKey": null
+            }
+          ],
+          "storageKey": null
+        },
+        {
+          "alias": null,
+          "args": null,
           "concreteType": "CostAnalysis",
           "kind": "LinkedField",
           "name": "costAnalysis",
           "plural": false,
           "selections": [
-            (v8/*: any*/),
-            (v9/*: any*/),
+            (v10/*: any*/),
+            (v11/*: any*/),
             {
               "alias": null,
               "args": null,
@@ -743,7 +852,7 @@ return {
               "name": "billingType",
               "storageKey": null
             },
-            (v10/*: any*/),
+            (v12/*: any*/),
             {
               "alias": null,
               "args": null,
@@ -751,11 +860,11 @@ return {
               "name": "maxSubscriptionCostUsd",
               "storageKey": null
             },
-            (v11/*: any*/),
             (v13/*: any*/),
-            (v14/*: any*/),
             (v15/*: any*/),
             (v16/*: any*/),
+            (v17/*: any*/),
+            (v18/*: any*/),
             {
               "alias": null,
               "args": null,
@@ -763,10 +872,10 @@ return {
               "name": "costPerCompletedTask",
               "storageKey": null
             },
-            (v17/*: any*/),
-            (v18/*: any*/),
             (v19/*: any*/),
             (v20/*: any*/),
+            (v21/*: any*/),
+            (v22/*: any*/),
             {
               "alias": null,
               "args": null,
@@ -789,9 +898,9 @@ return {
                   "name": "configDirName",
                   "storageKey": null
                 },
-                (v8/*: any*/),
-                (v9/*: any*/),
                 (v10/*: any*/),
+                (v11/*: any*/),
+                (v12/*: any*/),
                 {
                   "alias": null,
                   "args": null,
@@ -813,15 +922,15 @@ return {
                   "name": "modelCount",
                   "storageKey": null
                 },
-                (v16/*: any*/),
-                (v17/*: any*/),
                 (v18/*: any*/),
-                (v11/*: any*/),
-                (v13/*: any*/),
-                (v14/*: any*/),
                 (v19/*: any*/),
                 (v20/*: any*/),
-                (v15/*: any*/)
+                (v13/*: any*/),
+                (v15/*: any*/),
+                (v16/*: any*/),
+                (v21/*: any*/),
+                (v22/*: any*/),
+                (v17/*: any*/)
               ],
               "storageKey": null
             }
@@ -837,6 +946,6 @@ return {
 };
 })();
 
-(node as any).hash = "96a8d421cd83944dc0055258813ebf6f";
+(node as any).hash = "2399141ecd4a8f97f8c92cb8bb2f639d";
 
 export default node;

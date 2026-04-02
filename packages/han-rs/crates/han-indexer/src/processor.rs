@@ -46,6 +46,56 @@ pub enum ProcessorError {
 
 pub type ProcessorResult<T> = Result<T, ProcessorError>;
 
+/// Check if the indexer version has changed and trigger re-indexing if needed.
+///
+/// Compares `INDEXER_VERSION` against `han_metadata.indexer_version`. When the
+/// stored version differs (or is missing), resets `last_indexed_line` to 0 on
+/// all sessions and session_files, then updates the stored version. This ensures
+/// that changes to indexing logic (like new computed columns) are retroactively
+/// applied to all existing data.
+pub async fn check_indexer_version(db: &DatabaseConnection) -> ProcessorResult<bool> {
+    // Read current stored version
+    let row = db
+        .query_one(Statement::from_string(
+            DbBackend::Sqlite,
+            "SELECT value FROM han_metadata WHERE key = 'indexer_version'".to_string(),
+        ))
+        .await
+        .map_err(|e| ProcessorError::Other(e.to_string()))?;
+
+    let stored_version = row.and_then(|r| r.try_get::<String>("", "value").ok());
+
+    if stored_version.as_deref() == Some(INDEXER_VERSION) {
+        return Ok(false); // No change needed
+    }
+
+    // Version mismatch — trigger full re-index
+    tracing::info!(
+        old = ?stored_version,
+        new = INDEXER_VERSION,
+        "Indexer version changed, triggering full re-index"
+    );
+
+    db.execute_unprepared("UPDATE sessions SET last_indexed_line = 0")
+        .await
+        .map_err(|e| ProcessorError::Other(e.to_string()))?;
+    db.execute_unprepared("UPDATE session_files SET last_indexed_line = 0")
+        .await
+        .map_err(|e| ProcessorError::Other(e.to_string()))?;
+
+    // Update stored version
+    db.execute(Statement::from_sql_and_values(
+        DbBackend::Sqlite,
+        "INSERT OR REPLACE INTO han_metadata (key, value, updated_at) \
+         VALUES ('indexer_version', $1, datetime('now'))",
+        vec![INDEXER_VERSION.into()],
+    ))
+    .await
+    .map_err(|e| ProcessorError::Other(e.to_string()))?;
+
+    Ok(true) // Re-index triggered
+}
+
 // ============================================================================
 // JSONL Parsing helpers
 // ============================================================================
@@ -224,7 +274,7 @@ fn finalize_parsed_message(
         (None, None, None)
     };
 
-    Some(ParsedMessage {
+    let mut msg = ParsedMessage {
         message_type,
         role,
         content,
@@ -243,8 +293,11 @@ fn finalize_parsed_message(
         lines_added,
         lines_removed,
         files_changed,
+        human_time_ms: None,
         compact_type,
-    })
+    };
+    msg.human_time_ms = estimate_human_time_ms(&msg);
+    Some(msg)
 }
 
 /// Extract message content from various JSON structures.
@@ -439,6 +492,64 @@ fn extract_line_changes(json: &Value) -> (Option<i32>, Option<i32>, Option<i32>)
         )
     } else {
         (None, None, None)
+    }
+}
+
+/// Indexer version — bump this to trigger automatic re-indexing of all sessions.
+/// The coordinator checks this against `han_metadata.indexer_version` at startup.
+pub const INDEXER_VERSION: &str = "2";
+
+/// Estimate human-equivalent time in milliseconds for a single message.
+///
+/// Uses realistic human performance benchmarks:
+/// - Reading: 250 WPM → ~0.32s per output token (4 chars/token, 0.75 words/token)
+/// - Typing code: 40 WPM → ~12s per line added
+/// - User turn (thinking/deciding): 120s per turn
+/// - Tool navigation overhead: 15-60s depending on tool type
+///
+/// Returns `None` for message types that don't contribute (progress, system, etc.).
+pub fn estimate_human_time_ms(parsed: &ParsedMessage) -> Option<i32> {
+    match parsed.message_type {
+        MessageType::Assistant => {
+            let mut ms: f64 = 0.0;
+
+            // Reading time: output_tokens * 0.32s/token → ms
+            if let Some(output_tokens) = parsed.output_tokens {
+                ms += output_tokens as f64 * 320.0; // 0.32s * 1000ms
+            }
+
+            // Typing time: lines_added * 12s/line → ms
+            if let Some(lines_added) = parsed.lines_added {
+                ms += lines_added as f64 * 12_000.0;
+            }
+
+            if ms > 0.0 { Some(ms as i32) } else { None }
+        }
+        MessageType::User => {
+            // Scale by content length: short confirmations ("y", "ok") get less time,
+            // longer prompts with context get more. Clamp between 5s and 120s.
+            let content_len = parsed.content.as_ref().map(|c| c.len()).unwrap_or(0);
+            // ~0.5s per character, clamped
+            let secs = (content_len as f64 * 0.5).clamp(5.0, 120.0);
+            Some((secs * 1000.0) as i32)
+        }
+        MessageType::ToolUse => {
+            // Per-tool navigation/execution overhead
+            let tool = parsed.tool_name.as_deref().unwrap_or("");
+            let secs = match tool {
+                "Read" => 15.0,
+                "Write" => 30.0,
+                "Edit" | "NotebookEdit" => 45.0,
+                "Bash" => 20.0,
+                "Grep" | "Glob" => 30.0,
+                "WebSearch" | "WebFetch" => 60.0,
+                "Agent" | "Task" => 60.0,
+                "TodoWrite" | "TodoRead" => 0.0, // No human equivalent
+                _ => 15.0,
+            };
+            if secs > 0.0 { Some((secs * 1000.0) as i32) } else { None }
+        }
+        _ => None,
     }
 }
 
@@ -1233,6 +1344,7 @@ fn to_active_model(
     lines_added: Option<i32>,
     lines_removed: Option<i32>,
     files_changed: Option<i32>,
+    human_time_ms: Option<i32>,
 ) -> messages::ActiveModel {
     messages::ActiveModel {
         id: Set(id),
@@ -1261,6 +1373,7 @@ fn to_active_model(
         lines_added: Set(lines_added),
         lines_removed: Set(lines_removed),
         files_changed: Set(files_changed),
+        human_time_ms: Set(human_time_ms),
         indexed_at: Set(Some(Utc::now().to_rfc3339())),
     }
 }
@@ -1563,6 +1676,30 @@ pub async fn index_session_file(
                                         let tool_input_str = item
                                             .get("input")
                                             .map(|v| v.to_string());
+                                        // Estimate human time for this tool_use
+                                        let tool_use_msg = ParsedMessage {
+                                            message_type: MessageType::ToolUse,
+                                            role: Some("assistant".to_string()),
+                                            content: None,
+                                            tool_name: Some(tool_name.to_string()),
+                                            tool_input: tool_input_str.clone(),
+                                            tool_result: None,
+                                            raw_json: String::new(),
+                                            timestamp: finalized.timestamp.clone(),
+                                            uuid: tool_use_id.clone(),
+                                            agent_id: finalized.agent_id.clone(),
+                                            parent_id: Some(message_id.clone()),
+                                            input_tokens: None,
+                                            output_tokens: None,
+                                            cache_read_tokens: None,
+                                            cache_creation_tokens: None,
+                                            lines_added: None,
+                                            lines_removed: None,
+                                            files_changed: None,
+                                            human_time_ms: None,
+                                            compact_type: None,
+                                        };
+                                        let tool_human_time = estimate_human_time_ms(&tool_use_msg);
                                         messages_batch.push(to_active_model(
                                             tool_use_id,
                                             &session_id,
@@ -1582,6 +1719,7 @@ pub async fn index_session_file(
                                             None, None, None, None,
                                             None, None, None, None,
                                             None, None, None,
+                                            tool_human_time,
                                         ));
                                     }
                                 }
@@ -1685,6 +1823,7 @@ pub async fn index_session_file(
                 finalized.lines_added,
                 finalized.lines_removed,
                 finalized.files_changed,
+                finalized.human_time_ms,
             ));
 
             // NOTE: Separate sentiment_analysis events are no longer generated.
@@ -1759,6 +1898,7 @@ pub async fn index_session_file(
                 None,
                 None,
                 None,
+                None, // human_time_ms
             ));
 
             if messages_batch.len() >= 100 {
@@ -1938,6 +2078,7 @@ fn generate_sentiment_event(
         None,
         None,
         None,
+        None, // human_time_ms
     ))
 }
 
@@ -2179,6 +2320,9 @@ pub async fn handle_file_event(
 
 /// Perform a full scan and index of all Claude Code sessions.
 pub async fn full_scan_and_index(db: &DatabaseConnection) -> ProcessorResult<Vec<IndexResult>> {
+    // Check if indexer version changed — triggers full re-index if needed
+    let _ = check_indexer_version(db).await;
+
     let mut results = Vec::new();
 
     let config_dirs = crud::config_dirs::list(db).await?;

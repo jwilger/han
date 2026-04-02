@@ -240,6 +240,7 @@ fn rows_to_models(rows: Vec<sea_orm::QueryResult>) -> DbResult<Vec<messages::Mod
             lines_added: row.try_get("", "lines_added").ok(),
             lines_removed: row.try_get("", "lines_removed").ok(),
             files_changed: row.try_get("", "files_changed").ok(),
+            human_time_ms: row.try_get("", "human_time_ms").ok(),
             indexed_at: row.try_get("", "indexed_at").ok(),
         });
     }
