@@ -118,17 +118,6 @@
         ]
       }
     ],
-    "WorktreeCreate": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "han hook dispatch WorktreeCreate",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
     "WorktreeRemove": [
       {
         "hooks": [
